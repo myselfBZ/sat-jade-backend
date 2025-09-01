@@ -1,0 +1,21 @@
+version: "2"
+sql:
+  - name: users
+    engine: "postgresql"
+    queries: "internal/queries/users/query.sql"
+    schema: "internal/schemas/users.sql"
+    gen:
+      go:
+        package: "qusers"
+        out: "internal/queries/users"
+        sql_package: "pgx/v5"
+        
+  - name: practices
+    engine: "postgresql"
+    queries: "internal/queries/qpractices/query.sql"
+    schema: "internal/schemas/practice.sql"
+    gen:
+      go:
+        package: "qpractices"
+        out: "internal/queries/qpractices"
+        sql_package: "pgx/v5"
