@@ -1,3 +1,3 @@
 run:
-	go build -o api ./cmd/api
+	go build -o bin/api ./cmd/api
 	bin/api

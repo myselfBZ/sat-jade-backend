@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/myselfBZ/sat-jade/internal/services/auth"
@@ -39,17 +41,22 @@ func (a *api) registerRoutes() *echo.Echo {
 		},
 	}))
 	v1 := e.Group("/v1")
-	users := v1.Group("/users", a.AuthMiddleware)
+	usersRouter := v1.Group("/users", a.AuthMiddleware)
 	practices := v1.Group("/practices", a.AuthMiddleware)
 	results := practices.Group("/results")
 	questions := practices.Group("/questions")
 	auth := v1.Group("/auth")
 
-	users.POST("/tutor", a.users.CreateTutor)
+	usersRouter.POST("/tutor", a.users.CreateTutor)
+	usersRouter.GET("/self", func(c echo.Context) error {
+		user := c.Get("user").(*users.User)
+		return c.JSON(http.StatusOK, user)
+	})
 
 	results.GET("/", a.practices.GetResults)
 	results.GET("/:id", a.practices.GetSessionAnswers)
 	results.DELETE("/:id", a.practices.DeleteSession)
+	results.POST("/:id/feedback", a.practices.GetSessionAIFeedback)
 
 	practices.POST("/", a.practices.Create)
 	practices.DELETE("/:id", a.practices.Delete)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/myselfBZ/sat-jade/internal/llm"
 	"github.com/myselfBZ/sat-jade/internal/services/users"
 )
 
@@ -281,6 +282,70 @@ func (s *PracticeService) DeleteSession(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{
 		"status": "ok",
 	})
+}
+
+func (s *PracticeService) GetSessionAIFeedback(c echo.Context) error {
+	id := c.Param("id")
+	validID, err := strconv.Atoi(id)
+	session, err := s.storage.GetSessionById(c.Request().Context(), int32(validID))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity)
+	}
+
+	answers, err := s.storage.GetSessionAnswers(c.Request().Context(), int32(validID))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnprocessableEntity)
+	}
+
+	practice, err := s.storage.GetById(c.Request().Context(), session.PracticeId)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	var questions []*Question
+
+	for _, m := range practice.Modules {
+		questions = append(questions, m.Questions...)
+	}
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+
+	wrongAnswers := llm.MistakeCountByDomain{}
+
+	questionIndex := 0
+	mistakeCount := 0
+
+	for _, a := range answers {
+		if a.CorrectAnswer != a.UserAnswer {
+			q := questions[questionIndex]
+			_, ok := wrongAnswers[q.Domain]
+			if !ok {
+				wrongAnswers[q.Domain] = 1
+			}
+			wrongAnswers[q.Domain]++
+			mistakeCount++
+		}
+		questionIndex++
+	}
+
+	feedBackParam := &llm.PracticeOverviewParams{
+		CorrectAnswers: 98 - mistakeCount,
+		Mistakes:       wrongAnswers,
+	}
+	log.Println("Correct answers", feedBackParam.CorrectAnswers)
+
+	feedback, err := s.LLM.GeneratePracticeOverview(feedBackParam)
+
+	if err != nil {
+		log.Println("LLM Error: ", err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
+
+	return c.JSON(http.StatusOK, feedback)
 }
 
 func isTutorOrAdmin(c echo.Context) bool {

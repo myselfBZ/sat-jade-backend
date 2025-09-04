@@ -16,8 +16,8 @@ type User struct {
 	Password  string    `json:"-"`
 	FullName  string    `json:"full_name"`
 	Role      string    `json:"role"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Storage interface {
