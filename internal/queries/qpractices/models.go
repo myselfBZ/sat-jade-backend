@@ -42,10 +42,13 @@ type Question struct {
 }
 
 type TestSession struct {
-	ID         int32
-	UserID     pgtype.UUID
-	PracticeID int32
-	CreatedAt  pgtype.Timestamp
+	ID           int32
+	UserID       pgtype.UUID
+	PracticeID   int32
+	CreatedAt    pgtype.Timestamp
+	EnglishScore pgtype.Int4
+	MathScore    pgtype.Int4
+	TotalScore   pgtype.Int4
 }
 
 type TestSessionAnswer struct {

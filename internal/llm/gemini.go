@@ -41,7 +41,7 @@ func (l *GeminiLLM) GeneratePracticeOverview(params *PracticeOverviewParams) (*P
 		mistakesByDomain += fmt.Sprintf(domain+": %d\n", mistakeCount)
 	}
 
-	data, err := l.requestLLM(fmt.Sprintf(THE_PRACTICE_PROMPT, len(params.Mistakes), params.CorrectAnswers, mistakesByDomain))
+	data, err := l.requestLLM(fmt.Sprintf(THE_PRACTICE_PROMPT, 98-params.CorrectAnswers, params.CorrectAnswers, mistakesByDomain))
 	if err != nil {
 		return nil, err
 	}

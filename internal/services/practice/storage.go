@@ -42,17 +42,23 @@ type AnswerChoice struct {
 
 type ResultPreview struct {
 	CorrectAnswers int64     `json:"correct_answers"`
+	EnglishScore   int32     `json:"english_score"`
+	MathScore      int32     `json:"math_score"`
+	Total          int32     `json:"total_score"`
 	PracticeTitle  string    `json:"practice_title"`
 	ID             int32     `json:"id"`
 	CreatedAt      time.Time `json:"created_at"`
 }
 
 type TestSession struct {
-	ID         int32
-	UserId     string
-	PracticeId int32
-	CreatedAt  time.Time
-	Answers    []*TestSessionAnswers
+	ID           int32
+	UserId       string
+	PracticeId   int32
+	CreatedAt    time.Time
+	TotalScore   int32
+	MathScore    int32
+	EnglishScore int32
+	Answers      []*TestSessionAnswers
 }
 
 type TestSessionAnswers struct {
@@ -85,6 +91,7 @@ type Storage interface {
 	GetSessionById(ctx context.Context, sessionId int32) (*TestSession, error)
 	GetSessionAnswers(ctx context.Context, sessionId int32) ([]*TestSessionAnswers, error)
 	DeleteSessionById(ctx context.Context, userId uuid.UUID, sessionId int32) error
+	GetLastSession(ctx context.Context, userId uuid.UUID) (*ResultPreview, error)
 }
 
 type PostgresStorage struct {
@@ -228,8 +235,11 @@ func (s *PostgresStorage) Delete(ctx context.Context, id int32) error {
 func (s *PostgresStorage) CreateSession(ctx context.Context, session *TestSession) error {
 	userId, _ := uuid.Parse(session.UserId)
 	testSession, err := s.queries.CreateTestSession(ctx, qpractices.CreateTestSessionParams{
-		PracticeID: session.PracticeId,
-		UserID:     pgtype.UUID{Bytes: userId, Valid: true},
+		PracticeID:   session.PracticeId,
+		UserID:       pgtype.UUID{Bytes: userId, Valid: true},
+		EnglishScore: pgtype.Int4{Int32: session.EnglishScore, Valid: true},
+		TotalScore:   pgtype.Int4{Int32: session.TotalScore, Valid: true},
+		MathScore:    pgtype.Int4{Int32: session.MathScore, Valid: true},
 	})
 
 	session.ID = testSession.ID
@@ -269,6 +279,9 @@ func (s *PostgresStorage) GetResultPreviews(ctx context.Context, userId string) 
 		result := &ResultPreview{
 			CorrectAnswers: r.CorrectAnswers,
 			PracticeTitle:  r.PracticeTitle,
+			MathScore:      r.MathScore.Int32,
+			EnglishScore:   r.EnglishScore.Int32,
+			Total:          r.TotalScore.Int32,
 			CreatedAt:      r.CreatedAt.Time,
 			ID:             r.ID,
 		}
@@ -317,4 +330,18 @@ func (s *PostgresStorage) DeleteSessionById(ctx context.Context, userId uuid.UUI
 		ID:     sessionId,
 	})
 	return err
+}
+
+func (s *PostgresStorage) GetLastSession(ctx context.Context, userId uuid.UUID) (*ResultPreview, error) {
+	result, err := s.queries.GetLastSession(ctx, pgtype.UUID{Bytes: userId, Valid: true})
+	if err != nil {
+		return nil, err
+	}
+	return &ResultPreview{
+		EnglishScore: result.EnglishScore.Int32,
+		MathScore:    result.MathScore.Int32,
+		Total:        result.TotalScore.Int32,
+		ID:           result.ID,
+		CreatedAt:    result.CreatedAt.Time,
+	}, nil
 }

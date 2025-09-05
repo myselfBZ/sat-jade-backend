@@ -20,11 +20,6 @@ type testSessionPayload struct {
 	Answers []string `json:"answers"`
 }
 
-/* 'practice_id', 'section',
-'domain', 'number', 'difficulty',
-'correct', 'paragraph', 'prompt', 'explanation',
-'choices', */
-
 type questionPayload struct {
 	Number        int32          `json:"number"`
 	PracticeId    int32          `json:"practice_id"`
@@ -127,7 +122,6 @@ func (s *PracticeService) AddQuestion(c echo.Context) error {
 	moduleId, err := s.storage.GetModuleId(c.Request().Context(), question.PracticeId, question.Module)
 
 	if err != nil {
-		log.Println("DEBUG: moduel name: ", question.Module)
 		return echo.NewHTTPError(http.StatusNotFound, "module not found")
 	}
 
@@ -168,6 +162,9 @@ func (s *PracticeService) CreateTestSession(c echo.Context) error {
 	}
 
 	answerIdx := 0
+
+	rwCorrect := 0
+	mathCorrect := 0
 	for _, m := range practice.Modules {
 		for _, q := range m.Questions {
 			if q.Correct == p.Answers[answerIdx] {
@@ -177,6 +174,11 @@ func (s *PracticeService) CreateTestSession(c echo.Context) error {
 					Module:        m.Name,
 					Status:        "correct",
 				})
+				if answerIdx < 54 {
+					rwCorrect++
+				} else {
+					mathCorrect++
+				}
 			} else if p.Answers[answerIdx] == "" {
 				testSession.Answers = append(testSession.Answers, &TestSessionAnswers{
 					UserAnswer:    p.Answers[answerIdx],
@@ -196,7 +198,10 @@ func (s *PracticeService) CreateTestSession(c echo.Context) error {
 		}
 
 	}
-
+	rwScore, mathScore, totalScore := Score(rwCorrect, mathCorrect)
+	testSession.MathScore = int32(mathScore)
+	testSession.EnglishScore = int32(rwScore)
+	testSession.TotalScore = int32(totalScore)
 	if err := s.storage.CreateSession(c.Request().Context(), testSession); err != nil {
 		log.Print(err)
 		return echo.NewHTTPError(http.StatusInternalServerError)
@@ -210,6 +215,7 @@ func (s *PracticeService) CreateTestSession(c echo.Context) error {
 
 func (s *PracticeService) GetResults(c echo.Context) error {
 	user := c.Get("user").(*users.User)
+
 	resultPreviews, err := s.storage.GetResultPreviews(c.Request().Context(), user.ID)
 	if err != nil {
 		log.Println(err)
@@ -218,8 +224,13 @@ func (s *PracticeService) GetResults(c echo.Context) error {
 	return c.JSON(http.StatusOK, resultPreviews)
 }
 
-func (s *PracticeService) GetSessionAnswers(c echo.Context) error {
+func (s *PracticeService) GetSessionById(c echo.Context) error {
 	sessionId := c.Param("id")
+
+	if sessionId == "last" {
+		return s.getLastSession(c)
+	}
+
 	validSessionID, err := strconv.Atoi(sessionId)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity)
@@ -320,13 +331,14 @@ func (s *PracticeService) GetSessionAIFeedback(c echo.Context) error {
 	mistakeCount := 0
 
 	for _, a := range answers {
-		if a.CorrectAnswer != a.UserAnswer {
+		if a.Status != "correct" {
 			q := questions[questionIndex]
 			_, ok := wrongAnswers[q.Domain]
 			if !ok {
 				wrongAnswers[q.Domain] = 1
+			} else {
+				wrongAnswers[q.Domain]++
 			}
-			wrongAnswers[q.Domain]++
 			mistakeCount++
 		}
 		questionIndex++
@@ -336,7 +348,7 @@ func (s *PracticeService) GetSessionAIFeedback(c echo.Context) error {
 		CorrectAnswers: 98 - mistakeCount,
 		Mistakes:       wrongAnswers,
 	}
-	log.Println("Correct answers", feedBackParam.CorrectAnswers)
+	log.Println("wrong answers", mistakeCount)
 
 	feedback, err := s.LLM.GeneratePracticeOverview(feedBackParam)
 
@@ -346,6 +358,18 @@ func (s *PracticeService) GetSessionAIFeedback(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, feedback)
+}
+
+func (s *PracticeService) getLastSession(c echo.Context) error {
+	user := c.Get("user").(*users.User)
+	userId, _ := uuid.Parse(user.ID)
+	session, err := s.storage.GetLastSession(c.Request().Context(), userId)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+
+	return c.JSON(http.StatusOK, session)
 }
 
 func isTutorOrAdmin(c echo.Context) bool {

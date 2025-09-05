@@ -126,22 +126,40 @@ func (q *Queries) Create(ctx context.Context, title string) (CreateRow, error) {
 }
 
 const createTestSession = `-- name: CreateTestSession :one
-INSERT INTO test_session(practice_id, user_id) VALUES($1, $2) RETURNING id, user_id, practice_id, created_at
+INSERT INTO test_session(
+    practice_id, 
+    user_id, 
+    english_score, 
+    math_score, 
+    total_score
+    ) VALUES($1, $2, $3, $4, $5) RETURNING id, user_id, practice_id, created_at, english_score, math_score, total_score
 `
 
 type CreateTestSessionParams struct {
-	PracticeID int32
-	UserID     pgtype.UUID
+	PracticeID   int32
+	UserID       pgtype.UUID
+	EnglishScore pgtype.Int4
+	MathScore    pgtype.Int4
+	TotalScore   pgtype.Int4
 }
 
 func (q *Queries) CreateTestSession(ctx context.Context, arg CreateTestSessionParams) (TestSession, error) {
-	row := q.db.QueryRow(ctx, createTestSession, arg.PracticeID, arg.UserID)
+	row := q.db.QueryRow(ctx, createTestSession,
+		arg.PracticeID,
+		arg.UserID,
+		arg.EnglishScore,
+		arg.MathScore,
+		arg.TotalScore,
+	)
 	var i TestSession
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		&i.PracticeID,
 		&i.CreatedAt,
+		&i.EnglishScore,
+		&i.MathScore,
+		&i.TotalScore,
 	)
 	return i, err
 }
@@ -221,7 +239,7 @@ func (q *Queries) Delete(ctx context.Context, id int32) (Practice, error) {
 }
 
 const deleteSessionById = `-- name: DeleteSessionById :one
-DELETE FROM test_session WHERE id = $1 AND user_id = $2 RETURNING id, user_id, practice_id, created_at
+DELETE FROM test_session WHERE id = $1 AND user_id = $2 RETURNING id, user_id, practice_id, created_at, english_score, math_score, total_score
 `
 
 type DeleteSessionByIdParams struct {
@@ -237,6 +255,9 @@ func (q *Queries) DeleteSessionById(ctx context.Context, arg DeleteSessionByIdPa
 		&i.UserID,
 		&i.PracticeID,
 		&i.CreatedAt,
+		&i.EnglishScore,
+		&i.MathScore,
+		&i.TotalScore,
 	)
 	return i, err
 }
@@ -305,7 +326,10 @@ SELECT
     p.title AS practice_title,
     COUNT(CASE WHEN tsa.status = 'correct' THEN 1 END) AS correct_answers,
     COUNT(tsa.id) AS total_questions,
-    ts.created_at
+    ts.created_at,
+    ts.english_score,
+    ts.math_score,
+    ts.total_score
 FROM test_session ts
 JOIN practice p ON ts.practice_id = p.id
 LEFT JOIN test_session_answers tsa ON ts.id = tsa.session_id
@@ -320,6 +344,9 @@ type GetExamResultsByUserIDRow struct {
 	CorrectAnswers int64
 	TotalQuestions int64
 	CreatedAt      pgtype.Timestamp
+	EnglishScore   pgtype.Int4
+	MathScore      pgtype.Int4
+	TotalScore     pgtype.Int4
 }
 
 func (q *Queries) GetExamResultsByUserID(ctx context.Context, userID pgtype.UUID) ([]GetExamResultsByUserIDRow, error) {
@@ -337,6 +364,9 @@ func (q *Queries) GetExamResultsByUserID(ctx context.Context, userID pgtype.UUID
 			&i.CorrectAnswers,
 			&i.TotalQuestions,
 			&i.CreatedAt,
+			&i.EnglishScore,
+			&i.MathScore,
+			&i.TotalScore,
 		); err != nil {
 			return nil, err
 		}
@@ -346,6 +376,29 @@ func (q *Queries) GetExamResultsByUserID(ctx context.Context, userID pgtype.UUID
 		return nil, err
 	}
 	return items, nil
+}
+
+const getLastSession = `-- name: GetLastSession :one
+SELECT id, user_id, practice_id, created_at, english_score, math_score, total_score 
+FROM test_session 
+WHERE user_id = $1
+ORDER BY created_at DESC 
+LIMIT 1
+`
+
+func (q *Queries) GetLastSession(ctx context.Context, userID pgtype.UUID) (TestSession, error) {
+	row := q.db.QueryRow(ctx, getLastSession, userID)
+	var i TestSession
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.PracticeID,
+		&i.CreatedAt,
+		&i.EnglishScore,
+		&i.MathScore,
+		&i.TotalScore,
+	)
+	return i, err
 }
 
 const getModuleID = `-- name: GetModuleID :one
@@ -507,7 +560,7 @@ func (q *Queries) GetSessionAnswers(ctx context.Context, sessionID int32) ([]Tes
 }
 
 const getSessionById = `-- name: GetSessionById :one
-SELECT id, user_id, practice_id, created_at FROM test_session WHERE id = $1
+SELECT id, user_id, practice_id, created_at, english_score, math_score, total_score FROM test_session WHERE id = $1
 `
 
 func (q *Queries) GetSessionById(ctx context.Context, id int32) (TestSession, error) {
@@ -518,6 +571,9 @@ func (q *Queries) GetSessionById(ctx context.Context, id int32) (TestSession, er
 		&i.UserID,
 		&i.PracticeID,
 		&i.CreatedAt,
+		&i.EnglishScore,
+		&i.MathScore,
+		&i.TotalScore,
 	)
 	return i, err
 }

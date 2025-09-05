@@ -54,7 +54,7 @@ func (a *api) registerRoutes() *echo.Echo {
 	})
 
 	results.GET("/", a.practices.GetResults)
-	results.GET("/:id", a.practices.GetSessionAnswers)
+	results.GET("/:id", a.practices.GetSessionById)
 	results.DELETE("/:id", a.practices.DeleteSession)
 	results.POST("/:id/feedback", a.practices.GetSessionAIFeedback)
 

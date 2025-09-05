@@ -36,7 +36,10 @@ CREATE TABLE test_session (
     id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     practice_id INT NOT NULL REFERENCES practice(id) ON DELETE CASCADE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    english_score INT,
+    math_score INT,
+    total_score INT
 );
 
 CREATE TABLE test_session_answers (
