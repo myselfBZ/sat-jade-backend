@@ -125,6 +125,32 @@ func (q *Queries) Create(ctx context.Context, title string) (CreateRow, error) {
 	return i, err
 }
 
+const createAIFeedback = `-- name: CreateAIFeedback :one
+UPDATE test_session SET ai_feedback = $1::JSONB WHERE id = $2 AND user_id = $3 RETURNING id, user_id, practice_id, created_at, ai_feedback, english_score, math_score, total_score
+`
+
+type CreateAIFeedbackParams struct {
+	Column1 []byte
+	ID      int32
+	UserID  pgtype.UUID
+}
+
+func (q *Queries) CreateAIFeedback(ctx context.Context, arg CreateAIFeedbackParams) (TestSession, error) {
+	row := q.db.QueryRow(ctx, createAIFeedback, arg.Column1, arg.ID, arg.UserID)
+	var i TestSession
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.PracticeID,
+		&i.CreatedAt,
+		&i.AiFeedback,
+		&i.EnglishScore,
+		&i.MathScore,
+		&i.TotalScore,
+	)
+	return i, err
+}
+
 const createTestSession = `-- name: CreateTestSession :one
 INSERT INTO test_session(
     practice_id, 
@@ -132,7 +158,7 @@ INSERT INTO test_session(
     english_score, 
     math_score, 
     total_score
-    ) VALUES($1, $2, $3, $4, $5) RETURNING id, user_id, practice_id, created_at, english_score, math_score, total_score
+    ) VALUES($1, $2, $3, $4, $5) RETURNING id, user_id, practice_id, created_at, ai_feedback, english_score, math_score, total_score
 `
 
 type CreateTestSessionParams struct {
@@ -157,6 +183,7 @@ func (q *Queries) CreateTestSession(ctx context.Context, arg CreateTestSessionPa
 		&i.UserID,
 		&i.PracticeID,
 		&i.CreatedAt,
+		&i.AiFeedback,
 		&i.EnglishScore,
 		&i.MathScore,
 		&i.TotalScore,
@@ -239,7 +266,7 @@ func (q *Queries) Delete(ctx context.Context, id int32) (Practice, error) {
 }
 
 const deleteSessionById = `-- name: DeleteSessionById :one
-DELETE FROM test_session WHERE id = $1 AND user_id = $2 RETURNING id, user_id, practice_id, created_at, english_score, math_score, total_score
+DELETE FROM test_session WHERE id = $1 AND user_id = $2 RETURNING id, user_id, practice_id, created_at, ai_feedback, english_score, math_score, total_score
 `
 
 type DeleteSessionByIdParams struct {
@@ -255,6 +282,7 @@ func (q *Queries) DeleteSessionById(ctx context.Context, arg DeleteSessionByIdPa
 		&i.UserID,
 		&i.PracticeID,
 		&i.CreatedAt,
+		&i.AiFeedback,
 		&i.EnglishScore,
 		&i.MathScore,
 		&i.TotalScore,
@@ -379,7 +407,7 @@ func (q *Queries) GetExamResultsByUserID(ctx context.Context, userID pgtype.UUID
 }
 
 const getLastSession = `-- name: GetLastSession :one
-SELECT id, user_id, practice_id, created_at, english_score, math_score, total_score 
+SELECT id, user_id, practice_id, created_at, ai_feedback, english_score, math_score, total_score 
 FROM test_session 
 WHERE user_id = $1
 ORDER BY created_at DESC 
@@ -394,6 +422,7 @@ func (q *Queries) GetLastSession(ctx context.Context, userID pgtype.UUID) (TestS
 		&i.UserID,
 		&i.PracticeID,
 		&i.CreatedAt,
+		&i.AiFeedback,
 		&i.EnglishScore,
 		&i.MathScore,
 		&i.TotalScore,
@@ -560,7 +589,7 @@ func (q *Queries) GetSessionAnswers(ctx context.Context, sessionID int32) ([]Tes
 }
 
 const getSessionById = `-- name: GetSessionById :one
-SELECT id, user_id, practice_id, created_at, english_score, math_score, total_score FROM test_session WHERE id = $1
+SELECT id, user_id, practice_id, created_at, ai_feedback, english_score, math_score, total_score FROM test_session WHERE id = $1
 `
 
 func (q *Queries) GetSessionById(ctx context.Context, id int32) (TestSession, error) {
@@ -571,6 +600,7 @@ func (q *Queries) GetSessionById(ctx context.Context, id int32) (TestSession, er
 		&i.UserID,
 		&i.PracticeID,
 		&i.CreatedAt,
+		&i.AiFeedback,
 		&i.EnglishScore,
 		&i.MathScore,
 		&i.TotalScore,

@@ -1,6 +1,7 @@
 package practice
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -271,6 +272,7 @@ func (s *PracticeService) GetSessionById(c echo.Context) error {
 		answers[questionsIndex].ChoiceB = q.AnswerChoices[1].Text
 		answers[questionsIndex].ChoiceC = q.AnswerChoices[2].Text
 		answers[questionsIndex].ChoiceD = q.AnswerChoices[3].Text
+		answers[questionsIndex].Explanation = q.Explanation
 
 		questionsIndex += 1
 	}
@@ -298,10 +300,21 @@ func (s *PracticeService) DeleteSession(c echo.Context) error {
 func (s *PracticeService) GetSessionAIFeedback(c echo.Context) error {
 	id := c.Param("id")
 	validID, err := strconv.Atoi(id)
-	session, err := s.storage.GetSessionById(c.Request().Context(), int32(validID))
+	user := c.Get("user").(*users.User)
 
+	userId, _ := uuid.Parse(user.ID)
+
+	session, err := s.storage.GetSessionById(c.Request().Context(), int32(validID))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnprocessableEntity)
+	}
+
+	if session.Feedback != nil {
+		var feedback AIFeedback
+		if err := json.Unmarshal(session.Feedback, &feedback); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError)
+		}
+		return c.JSON(http.StatusOK, feedback)
 	}
 
 	answers, err := s.storage.GetSessionAnswers(c.Request().Context(), int32(validID))
@@ -348,9 +361,16 @@ func (s *PracticeService) GetSessionAIFeedback(c echo.Context) error {
 		CorrectAnswers: 98 - mistakeCount,
 		Mistakes:       wrongAnswers,
 	}
-	log.Println("wrong answers", mistakeCount)
 
 	feedback, err := s.LLM.GeneratePracticeOverview(feedBackParam)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
+	byteData, _ := json.Marshal(feedback)
+
+	if err := s.storage.CreateFeedback(c.Request().Context(), userId, session.ID, byteData); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
 
 	if err != nil {
 		log.Println("LLM Error: ", err.Error())

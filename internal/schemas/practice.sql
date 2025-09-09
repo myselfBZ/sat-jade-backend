@@ -37,6 +37,7 @@ CREATE TABLE test_session (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     practice_id INT NOT NULL REFERENCES practice(id) ON DELETE CASCADE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ai_feedback JSONB,
     english_score INT,
     math_score INT,
     total_score INT

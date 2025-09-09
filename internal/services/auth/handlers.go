@@ -39,9 +39,9 @@ func (s *AuthService) Login(c echo.Context) error {
 	if err != nil {
 		switch err {
 		case errs.ErrRecordNotFound:
-			echo.NewHTTPError(http.StatusNotFound, err.Error())
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
 		default:
-			echo.NewHTTPError(http.StatusInternalServerError)
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 	}
 

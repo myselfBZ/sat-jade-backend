@@ -46,6 +46,7 @@ type TestSession struct {
 	UserID       pgtype.UUID
 	PracticeID   int32
 	CreatedAt    pgtype.Timestamp
+	AiFeedback   []byte
 	EnglishScore pgtype.Int4
 	MathScore    pgtype.Int4
 	TotalScore   pgtype.Int4

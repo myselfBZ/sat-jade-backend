@@ -1,24 +1,33 @@
 package llm
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"log"
-	"net/http"
 	"strings"
-	"time"
+
+	"google.golang.org/genai"
 )
 
-func NewGemini(apiKey string) *GeminiLLM {
+func NewGemini(apiKey string) (*GeminiLLM, error) {
+	client, err := genai.NewClient(context.Background(), &genai.ClientConfig{
+		APIKey:  apiKey,
+		Backend: genai.BackendGeminiAPI,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &GeminiLLM{
 		apikey: apiKey,
-	}
+		client: client,
+	}, nil
 }
 
 type GeminiLLM struct {
 	apikey string
+	client *genai.Client
 }
 
 type geminiResponse struct {
@@ -36,12 +45,44 @@ type geminiResponse struct {
 
 func (l *GeminiLLM) GeneratePracticeOverview(params *PracticeOverviewParams) (*PracticeOverview, error) {
 	mistakesByDomain := ""
+	for domain, mistakeCount := range params.Mistakes {
+		mistakesByDomain += fmt.Sprintf(domain+": %d\n", mistakeCount)
+	}
+
+	prompt := fmt.Sprintf(THE_PRACTICE_PROMPT, 98-params.CorrectAnswers, params.CorrectAnswers, mistakesByDomain)
+
+	result, err := l.client.Models.GenerateContent(
+		context.TODO(),
+		"gemini-2.5-flash",
+		genai.Text(prompt),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var payload PracticeOverview
+
+	text := result.Text()
+	clean := strings.TrimPrefix(text, "```json")
+	clean = strings.TrimSuffix(clean, "```")
+
+	if err := json.Unmarshal([]byte(clean), &payload); err != nil {
+		return nil, err
+	}
+
+	return &payload, nil
+}
+
+/*func (l *GeminiLLM) GeneratePracticeOverview(params *PracticeOverviewParams) (*PracticeOverview, error) {
+	mistakesByDomain := ""
 
 	for domain, mistakeCount := range params.Mistakes {
 		mistakesByDomain += fmt.Sprintf(domain+": %d\n", mistakeCount)
 	}
 
 	data, err := l.requestLLM(fmt.Sprintf(THE_PRACTICE_PROMPT, 98-params.CorrectAnswers, params.CorrectAnswers, mistakesByDomain))
+	log.Println("I have the data!!!!", err)
 	if err != nil {
 		return nil, err
 	}
@@ -114,6 +155,7 @@ func (l *GeminiLLM) requestLLM(prompt string) ([]byte, error) {
 	text := payload.Candidates[0].Content.Parts[0].Text
 	clean := strings.TrimPrefix(text, "```json")
 	clean = strings.TrimSuffix(clean, "```")
+	log.Println("text is here: ", text)
 	return []byte(clean), nil
-
 }
+*/

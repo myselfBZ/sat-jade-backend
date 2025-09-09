@@ -50,6 +50,12 @@ type ResultPreview struct {
 	CreatedAt      time.Time `json:"created_at"`
 }
 
+type AIFeedback struct {
+	Overview     string   `json:"overview"`
+	Suggesttions []string `json:"suggestions"`
+	Motivation   string   `json:"motivation"`
+}
+
 type TestSession struct {
 	ID           int32
 	UserId       string
@@ -58,6 +64,7 @@ type TestSession struct {
 	TotalScore   int32
 	MathScore    int32
 	EnglishScore int32
+	Feedback     []byte
 	Answers      []*TestSessionAnswers
 }
 
@@ -70,13 +77,14 @@ type TestSessionAnswers struct {
 	Status        string `json:"status"`
 
 	// qustion part
-	Number   int32  `json:"number"`
-	Passage  string `json:"passage"`
-	Question string `json:"question"`
-	ChoiceA  string `json:"choiceA"`
-	ChoiceB  string `json:"choiceB"`
-	ChoiceC  string `json:"choiceC"`
-	ChoiceD  string `json:"choiceD"`
+	Number      int32  `json:"number"`
+	Passage     string `json:"passage"`
+	Question    string `json:"question"`
+	ChoiceA     string `json:"choiceA"`
+	ChoiceB     string `json:"choiceB"`
+	ChoiceC     string `json:"choiceC"`
+	ChoiceD     string `json:"choiceD"`
+	Explanation string `json:"explanation"`
 }
 
 type Storage interface {
@@ -92,6 +100,7 @@ type Storage interface {
 	GetSessionAnswers(ctx context.Context, sessionId int32) ([]*TestSessionAnswers, error)
 	DeleteSessionById(ctx context.Context, userId uuid.UUID, sessionId int32) error
 	GetLastSession(ctx context.Context, userId uuid.UUID) (*ResultPreview, error)
+	CreateFeedback(ctx context.Context, userID uuid.UUID, sessionId int32, feedback []byte) error
 }
 
 type PostgresStorage struct {
@@ -321,6 +330,7 @@ func (s *PostgresStorage) GetSessionById(ctx context.Context, sessionId int32) (
 		UserId:     session.UserID.String(),
 		PracticeId: session.PracticeID,
 		CreatedAt:  session.CreatedAt.Time,
+		Feedback:   session.AiFeedback,
 	}, nil
 }
 
@@ -344,4 +354,13 @@ func (s *PostgresStorage) GetLastSession(ctx context.Context, userId uuid.UUID) 
 		ID:           result.ID,
 		CreatedAt:    result.CreatedAt.Time,
 	}, nil
+}
+
+func (s *PostgresStorage) CreateFeedback(ctx context.Context, userID uuid.UUID, sessionId int32, feedback []byte) error {
+	_, err := s.queries.CreateAIFeedback(ctx, qpractices.CreateAIFeedbackParams{
+		UserID:  pgtype.UUID{Bytes: userID, Valid: true},
+		ID:      sessionId,
+		Column1: feedback,
+	})
+	return err
 }
