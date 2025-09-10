@@ -2,9 +2,11 @@ package practice
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/myselfBZ/sat-jade/internal/queries/qpractices"
 )
@@ -92,8 +94,10 @@ type Storage interface {
 	Delete(ctx context.Context, id int32) error
 	GetAllPreview(ctx context.Context) ([]*Practice, error)
 	Create(ctx context.Context, title string) (int32, error)
+
 	AddQuestion(ctx context.Context, sectionID int32, q *Question) error
 	GetModuleId(ctx context.Context, practiceID int32, name string) (int32, error)
+	// session stuff
 	CreateSession(ctx context.Context, session *TestSession) error
 	GetResultPreviews(ctx context.Context, userId string) ([]*ResultPreview, error)
 	GetSessionById(ctx context.Context, sessionId int32) (*TestSession, error)
@@ -101,6 +105,7 @@ type Storage interface {
 	DeleteSessionById(ctx context.Context, userId uuid.UUID, sessionId int32) error
 	GetLastSession(ctx context.Context, userId uuid.UUID) (*ResultPreview, error)
 	CreateFeedback(ctx context.Context, userID uuid.UUID, sessionId int32, feedback []byte) error
+	GetAllSessions(ctx context.Context) ([]*ResultPreview, error)
 }
 
 type PostgresStorage struct {
@@ -363,4 +368,27 @@ func (s *PostgresStorage) CreateFeedback(ctx context.Context, userID uuid.UUID, 
 		Column1: feedback,
 	})
 	return err
+}
+
+func (s *PostgresStorage) GetAllSessions(ctx context.Context) ([]*ResultPreview, error) {
+	resultsDB, err := s.queries.GetAllSessions(ctx)
+	var results []*ResultPreview
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return results, nil
+		}
+		return nil, err
+	}
+
+	for _, r := range resultsDB {
+		results = append(results, &ResultPreview{
+			EnglishScore: r.EnglishScore.Int32,
+			MathScore:    r.MathScore.Int32,
+			Total:        r.TotalScore.Int32,
+			ID:           r.ID,
+			CreatedAt:    r.CreatedAt.Time,
+		})
+	}
+
+	return results, nil
 }

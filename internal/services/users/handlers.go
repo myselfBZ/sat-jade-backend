@@ -51,3 +51,15 @@ func (s *UserService) GetById(c echo.Context) error {
 
 	return nil
 }
+
+func (s *UserService) GetMany(c echo.Context) error {
+	user := c.Get("user").(*User)
+	if user.Role != ROLE_ADMIN {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	users, err := s.storage.GetMany(c.Request().Context())
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
+	return c.JSON(http.StatusOK, users)
+}

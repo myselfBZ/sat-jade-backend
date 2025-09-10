@@ -2,10 +2,12 @@ package users
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	qusers "github.com/myselfBZ/sat-jade/internal/queries/users"
 )
@@ -25,6 +27,7 @@ type Storage interface {
 	Create(ctx context.Context, u *User) error
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	GetByID(ctx context.Context, id string) (*User, error)
+	GetMany(ctx context.Context) ([]*User, error)
 }
 
 func NewPgStore(queries *qusers.Queries) *PostgresStorage {
@@ -87,4 +90,28 @@ func (s *PostgresStorage) Create(ctx context.Context, u *User) error {
 
 	u.ID = user.ID.String()
 	return nil
+}
+
+func (s *PostgresStorage) GetMany(ctx context.Context) ([]*User, error) {
+	DbUsers, err := s.queries.GetMany(ctx)
+	var users []*User
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return users, nil
+		}
+		return nil, err
+	}
+
+	for _, u := range DbUsers {
+		users = append(users, &User{
+			ID:        u.ID.String(),
+			Email:     u.Email,
+			FullName:  u.FullName,
+			Role:      u.Role,
+			CreatedAt: u.CreatedAt.Time,
+			UpdatedAt: u.UpdatedAt.Time,
+		})
+	}
+
+	return users, nil
 }

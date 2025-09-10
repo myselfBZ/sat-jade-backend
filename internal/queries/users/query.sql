@@ -6,3 +6,6 @@ INSERT INTO users(email, role, full_name, password_hash) VALUES($1, $2, $3, $4) 
 
 -- name: GetByEmail :one
 SELECT * FROM users WHERE email = $1;
+
+-- name: GetMany :many
+SELECT * FROM users;

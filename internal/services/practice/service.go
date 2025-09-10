@@ -8,10 +8,10 @@ import (
 	"github.com/myselfBZ/sat-jade/internal/queries/qpractices"
 )
 
-func New(db *pgxpool.Pool) *PracticeService {
+func New(db *pgxpool.Pool, llmApiKey string) *PracticeService {
 	queries := qpractices.New(db)
 	//groq := llm.NewGroq("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")
-	gemini, err := llm.NewGemini("AIzaSyDsOClmYzPr5ydj_LpKg7SNvkTzNoJqRIY")
+	gemini, err := llm.NewGemini(llmApiKey)
 	if err != nil {
 		log.Fatal("couldn't create an LLM client: ", err)
 	}

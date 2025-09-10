@@ -9,7 +9,7 @@ import (
 
 const (
 	ROLE_STUDENT = "student"
-	ROLE_ADMIN   = "admint"
+	ROLE_ADMIN   = "admin"
 	ROLE_TUTOR   = "tutor"
 )
 

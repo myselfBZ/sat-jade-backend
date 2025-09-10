@@ -52,8 +52,10 @@ func (a *api) registerRoutes() *echo.Echo {
 		user := c.Get("user").(*users.User)
 		return c.JSON(http.StatusOK, user)
 	})
+	usersRouter.GET("/", a.users.GetMany)
 
 	results.GET("/", a.practices.GetResults)
+	results.GET("/all", a.practices.GetAllResults)
 	results.GET("/:id", a.practices.GetSessionById)
 	results.DELETE("/:id", a.practices.DeleteSession)
 	results.POST("/:id/feedback", a.practices.GetSessionAIFeedback)

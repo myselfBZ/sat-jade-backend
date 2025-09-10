@@ -214,6 +214,20 @@ func (s *PracticeService) CreateTestSession(c echo.Context) error {
 
 }
 
+func (s *PracticeService) GetAllResults(c echo.Context) error {
+	user := c.Get("user").(*users.User)
+	if user.Role != users.ROLE_ADMIN {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+
+	results, err := s.storage.GetAllSessions(c.Request().Context())
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
+	return c.JSON(http.StatusOK, results)
+
+}
+
 func (s *PracticeService) GetResults(c echo.Context) error {
 	user := c.Get("user").(*users.User)
 

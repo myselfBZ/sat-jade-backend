@@ -290,6 +290,39 @@ func (q *Queries) DeleteSessionById(ctx context.Context, arg DeleteSessionByIdPa
 	return i, err
 }
 
+const getAllSessions = `-- name: GetAllSessions :many
+SELECT id, user_id, practice_id, created_at, ai_feedback, english_score, math_score, total_score from test_session
+`
+
+func (q *Queries) GetAllSessions(ctx context.Context) ([]TestSession, error) {
+	rows, err := q.db.Query(ctx, getAllSessions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TestSession
+	for rows.Next() {
+		var i TestSession
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.PracticeID,
+			&i.CreatedAt,
+			&i.AiFeedback,
+			&i.EnglishScore,
+			&i.MathScore,
+			&i.TotalScore,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAnswerChoicesByQuestionId = `-- name: GetAnswerChoicesByQuestionId :many
 SELECT id, label, text, question_id
 FROM answer_choice 
