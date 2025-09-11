@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -27,10 +28,14 @@ type api struct {
 }
 
 func (a *api) registerRoutes() *echo.Echo {
+	frontEndUrl := os.Getenv("FRONTNED_URL")
+	if frontEndUrl == "" {
+		panic("no FRONTEND_URL")
+	}
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:5173"},
+		AllowOrigins: []string{frontEndUrl},
 		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
 		AllowHeaders: []string{
 			echo.HeaderOrigin,
