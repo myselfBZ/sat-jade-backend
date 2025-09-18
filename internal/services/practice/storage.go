@@ -24,6 +24,7 @@ type Module struct {
 }
 
 type Question struct {
+	ID            int32          `json:"id"`
 	Number        int32          `json:"number"`
 	PracticeId    int32          `json:"practice_id"`
 	Module        string         `json:"module"`
@@ -147,6 +148,7 @@ func (s *PostgresStorage) GetById(ctx context.Context, id int32) (*Practice, err
 
 		for _, questionRow := range questionRows {
 			question := Question{
+				ID:            questionRow.ID,
 				Number:        questionRow.Number.Int32,
 				Domain:        questionRow.Domain,
 				Difficulty:    questionRow.Difficulty,

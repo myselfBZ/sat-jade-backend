@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/joho/godotenv/autoload"
@@ -19,7 +20,9 @@ func seedAdmin(pool *pgxpool.Pool) error {
 	if err != nil {
 		return err
 	}
-	_, err = pool.Exec(context.TODO(), q, hash)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
+	defer cancel()
+	_, err = pool.Exec(ctx, q, hash)
 	if err != nil {
 		return err
 	}

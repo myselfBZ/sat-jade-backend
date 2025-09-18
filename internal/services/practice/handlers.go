@@ -49,13 +49,11 @@ func (s *PracticeService) GetById(c echo.Context) error {
 	for _, m := range practice.Modules {
 		questionNumber += len(m.Questions)
 	}
-
 	if questionNumber != 98 {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"message": "This question isn't ready",
 		})
 	}
-
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
@@ -127,6 +125,7 @@ func (s *PracticeService) AddQuestion(c echo.Context) error {
 	}
 
 	if err := s.storage.AddQuestion(c.Request().Context(), moduleId, question); err != nil {
+		log.Print("errror: ", err)
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
@@ -230,7 +229,6 @@ func (s *PracticeService) GetAllResults(c echo.Context) error {
 
 func (s *PracticeService) GetResults(c echo.Context) error {
 	user := c.Get("user").(*users.User)
-
 	resultPreviews, err := s.storage.GetResultPreviews(c.Request().Context(), user.ID)
 	if err != nil {
 		log.Println(err)

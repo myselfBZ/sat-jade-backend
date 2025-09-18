@@ -640,3 +640,59 @@ func (q *Queries) GetSessionById(ctx context.Context, id int32) (TestSession, er
 	)
 	return i, err
 }
+
+const updateAnsweChoiceByID = `-- name: UpdateAnsweChoiceByID :one
+UPDATE answer_choice SET text = $1, label = $2 WHERE id = $3 RETURNING id, question_id, label, text
+`
+
+type UpdateAnsweChoiceByIDParams struct {
+	Text  string
+	Label string
+	ID    int32
+}
+
+func (q *Queries) UpdateAnsweChoiceByID(ctx context.Context, arg UpdateAnsweChoiceByIDParams) (AnswerChoice, error) {
+	row := q.db.QueryRow(ctx, updateAnsweChoiceByID, arg.Text, arg.Label, arg.ID)
+	var i AnswerChoice
+	err := row.Scan(
+		&i.ID,
+		&i.QuestionID,
+		&i.Label,
+		&i.Text,
+	)
+	return i, err
+}
+
+const updateQuestionByID = `-- name: UpdateQuestionByID :one
+UPDATE question SET paragraph = $1, prompt = $2, explanation = $3 WHERE id = $4 RETURNING id, domain, number, section_id, paragraph, correct, svg, prompt, explanation, difficulty
+`
+
+type UpdateQuestionByIDParams struct {
+	Paragraph   string
+	Prompt      string
+	Explanation string
+	ID          int32
+}
+
+func (q *Queries) UpdateQuestionByID(ctx context.Context, arg UpdateQuestionByIDParams) (Question, error) {
+	row := q.db.QueryRow(ctx, updateQuestionByID,
+		arg.Paragraph,
+		arg.Prompt,
+		arg.Explanation,
+		arg.ID,
+	)
+	var i Question
+	err := row.Scan(
+		&i.ID,
+		&i.Domain,
+		&i.Number,
+		&i.SectionID,
+		&i.Paragraph,
+		&i.Correct,
+		&i.Svg,
+		&i.Prompt,
+		&i.Explanation,
+		&i.Difficulty,
+	)
+	return i, err
+}

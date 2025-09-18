@@ -140,3 +140,9 @@ UPDATE test_session SET ai_feedback = $1::JSONB WHERE id = $2 AND user_id = $3 R
 
 -- name: GetAllSessions :many
 SELECT * from test_session;
+
+-- name: UpdateQuestionByID :one
+UPDATE question SET paragraph = $1, prompt = $2, explanation = $3 WHERE id = $4 RETURNING *;
+
+-- name: UpdateAnsweChoiceByID :one
+UPDATE answer_choice SET text = $1, label = $2 WHERE id = $3 RETURNING *;

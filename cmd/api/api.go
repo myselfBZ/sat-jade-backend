@@ -28,7 +28,7 @@ type api struct {
 }
 
 func (a *api) registerRoutes() *echo.Echo {
-	frontEndUrl := os.Getenv("FRONTNED_URL")
+	frontEndUrl := os.Getenv("FRONTEND_URL")
 	if frontEndUrl == "" {
 		panic("no FRONTEND_URL")
 	}
