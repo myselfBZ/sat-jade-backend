@@ -3,16 +3,20 @@ package main
 import (
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/myselfBZ/sat-jade/internal/services/auth"
-	"github.com/myselfBZ/sat-jade/internal/services/practice"
-	"github.com/myselfBZ/sat-jade/internal/services/users"
+	"github.com/myselfBZ/sat-jade/internal/auth"
+	"github.com/myselfBZ/sat-jade/internal/llm"
+	"github.com/myselfBZ/sat-jade/internal/store"
+	"go.uber.org/zap"
 )
 
 type authConfig struct {
 	secret string
+	aud    string
+	exp    time.Duration
 }
 
 type config struct {
@@ -21,10 +25,12 @@ type config struct {
 }
 
 type api struct {
-	users     *users.UserService
-	auth      *auth.AuthService
-	practices *practice.PracticeService
-	config    config
+	config config
+	logger *zap.SugaredLogger
+	llm    llm.LLM
+	// New
+	auth    auth.Authenticator
+	storage *store.Storage
 }
 
 func (a *api) registerRoutes() *echo.Echo {
@@ -48,33 +54,41 @@ func (a *api) registerRoutes() *echo.Echo {
 	v1 := e.Group("/v1")
 	usersRouter := v1.Group("/users", a.AuthMiddleware)
 	practices := v1.Group("/practices", a.AuthMiddleware)
-	results := practices.Group("/results")
-	questions := practices.Group("/questions")
+	modules := v1.Group("/modules", a.AuthMiddleware)
+	results := v1.Group("/results", a.AuthMiddleware)
 	auth := v1.Group("/auth")
 
-	usersRouter.POST("/tutor", a.users.CreateTutor)
+	questions := practices.Group("/questions")
+
 	usersRouter.GET("/self", func(c echo.Context) error {
-		user := c.Get("user").(*users.User)
+		user := c.Get("user").(*store.User)
 		return c.JSON(http.StatusOK, user)
 	})
-	usersRouter.GET("/", a.users.GetMany)
 
-	results.GET("/", a.practices.GetResults)
-	results.GET("/all", a.practices.GetAllResults)
-	results.GET("/:id", a.practices.GetSessionById)
-	results.DELETE("/:id", a.practices.DeleteSession)
-	results.POST("/:id/feedback", a.practices.GetSessionAIFeedback)
+	usersRouter.GET("/", a.getUsersHandler, a.isAdmin)
 
-	practices.POST("/", a.practices.Create)
-	practices.DELETE("/:id", a.practices.Delete)
-	practices.GET("/:id", a.practices.GetById)
-	practices.GET("/", a.practices.GetExamPreviews)
-	practices.POST("/submit", a.practices.CreateTestSession)
+	usersResults := usersRouter.Group("/results")
+	usersResults.POST("/", a.createResultHandler)
+	usersResults.GET("/", a.getUserResultsHandler)
 
-	questions.POST("/", a.practices.AddQuestion)
+	results.GET("/", a.getAllResultsHandler, a.isAdmin)
+	results.GET("/:id", a.getResultByIDHandler)
+	results.DELETE("/:id", a.deleteResultByIDHandler)
+	results.POST("/:id/feedback", a.getOrCreateAIFeedbackHandler)
 
-	auth.POST("/token", a.auth.Login)
-	auth.POST("/users", a.auth.SignUp)
+	modules.GET("/:id", a.getModuleById)
+
+	practices.POST("/", a.createPracticeHandler, a.isAdmin)
+	practices.DELETE("/:id", a.deletePracticeHandler, a.isAdmin)
+	practices.GET("/:id", a.getPracticeByIDHandler)
+	practices.GET("/", a.getPracticePreviewsHandler)
+
+	// update method is a must
+	questions.POST("/", a.createQuestionHandler, a.isAdmin)
+
+	// needs to be updated
+	auth.POST("/token", a.createTokenHandler)
+	auth.POST("/users", a.createUserHandler)
 
 	return e
 }

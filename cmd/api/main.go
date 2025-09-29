@@ -1,21 +1,25 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
+	"go.uber.org/zap"
 
+	"github.com/myselfBZ/sat-jade/internal/auth"
 	"github.com/myselfBZ/sat-jade/internal/db"
-	"github.com/myselfBZ/sat-jade/internal/services/auth"
-	"github.com/myselfBZ/sat-jade/internal/services/practice"
-	"github.com/myselfBZ/sat-jade/internal/services/users"
+	"github.com/myselfBZ/sat-jade/internal/llm"
+	"github.com/myselfBZ/sat-jade/internal/store"
 )
 
 var GEMINI_API_KEY string
 var SERVER_ADDR string
 var DB string
 var SECRET_KEY string
+var TOKEN_EXPR_HOURS int
 
 func loadEnvVars() {
 	GEMINI_API_KEY = os.Getenv("GEMINI_API_KEY")
@@ -37,6 +41,14 @@ func loadEnvVars() {
 	if SECRET_KEY == "" {
 		panic("no SECRET_KEY")
 	}
+	tokenExpr := os.Getenv("TOKEN_EXPR_HOURS")
+
+	var err error
+
+	TOKEN_EXPR_HOURS, err = strconv.Atoi(tokenExpr)
+	if err != nil {
+		fmt.Printf("expected int for TOKEN_EXPR_HOURS GOT %s\n", tokenExpr)
+	}
 }
 
 func main() {
@@ -47,9 +59,14 @@ func main() {
 			addr: ":" + SERVER_ADDR,
 			auth: authConfig{
 				secret: SECRET_KEY,
+				exp:    time.Hour * time.Duration(TOKEN_EXPR_HOURS),
+				aud:    "test-aud",
 			},
 		},
 	}
+	logger := zap.Must(zap.NewProduction(zap.AddCaller())).Sugar()
+	defer logger.Sync()
+	api.logger = logger
 
 	db, err := db.New(db.Config{
 		Addr:        DB,
@@ -61,10 +78,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	api.storage = store.New(db)
+	api.auth = auth.NewJWTAuthenticator(
+		api.config.auth.secret,
+		api.config.auth.aud,
+		api.config.auth.aud,
+	)
+	api.llm, err = llm.NewGemini(GEMINI_API_KEY)
 
-	userService := users.New(db)
-	api.users = userService
-	api.auth = auth.New(db, api.config.auth.secret, api.config.auth.secret, (time.Hour * 24))
-	api.practices = practice.New(db, GEMINI_API_KEY)
+	if err != nil {
+		fmt.Println("error connecting to gemini")
+		panic(err)
+	}
+
 	api.run()
 }

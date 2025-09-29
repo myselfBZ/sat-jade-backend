@@ -1,4 +1,4 @@
-package practice
+package main
 
 import "math"
 

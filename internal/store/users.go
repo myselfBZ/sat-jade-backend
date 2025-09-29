@@ -1,4 +1,4 @@
-package users
+package store
 
 import (
 	"context"
@@ -9,7 +9,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	qusers "github.com/myselfBZ/sat-jade/internal/queries/users"
+)
+
+const (
+	ROLE_STUDENT = "student"
+	ROLE_ADMIN   = "admin"
+	ROLE_TUTOR   = "tutor"
 )
 
 type User struct {
@@ -22,25 +29,18 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type Storage interface {
-	//GetByID(ctx context.Context, id string) (*User, error)
-	Create(ctx context.Context, u *User) error
-	GetByEmail(ctx context.Context, email string) (*User, error)
-	GetByID(ctx context.Context, id string) (*User, error)
-	GetMany(ctx context.Context) ([]*User, error)
-}
-
-func NewPgStore(queries *qusers.Queries) *PostgresStorage {
-	return &PostgresStorage{
-		queries: *queries,
+func NewUserStore(db *pgxpool.Pool) *UserStore {
+	queries := qusers.New(db)
+	return &UserStore{
+		queries: queries,
 	}
 }
 
-type PostgresStorage struct {
-	queries qusers.Queries
+type UserStore struct {
+	queries *qusers.Queries
 }
 
-func (s *PostgresStorage) GetByID(ctx context.Context, id string) (*User, error) {
+func (s *UserStore) GetByID(ctx context.Context, id string) (*User, error) {
 	parsedID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, err
@@ -53,6 +53,7 @@ func (s *PostgresStorage) GetByID(ctx context.Context, id string) (*User, error)
 	}
 	return &User{
 		ID:        user.ID.String(),
+		FullName:  user.FullName,
 		Email:     user.Email,
 		Password:  user.PasswordHash,
 		Role:      user.Role,
@@ -61,10 +62,15 @@ func (s *PostgresStorage) GetByID(ctx context.Context, id string) (*User, error)
 	}, nil
 }
 
-func (s *PostgresStorage) GetByEmail(ctx context.Context, email string) (*User, error) {
+func (s *UserStore) GetByEmail(ctx context.Context, email string) (*User, error) {
 	user, err := s.queries.GetByEmail(ctx, email)
 	if err != nil {
-		return nil, err
+		switch err {
+		case pgx.ErrNoRows:
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
 	}
 	return &User{
 		ID:        user.ID.String(),
@@ -76,7 +82,7 @@ func (s *PostgresStorage) GetByEmail(ctx context.Context, email string) (*User, 
 	}, nil
 }
 
-func (s *PostgresStorage) Create(ctx context.Context, u *User) error {
+func (s *UserStore) Create(ctx context.Context, u *User) error {
 	user, err := s.queries.Create(ctx, qusers.CreateParams{
 		FullName:     u.FullName,
 		Email:        u.Email,
@@ -85,15 +91,20 @@ func (s *PostgresStorage) Create(ctx context.Context, u *User) error {
 	})
 
 	if err != nil {
-		return err
+		switch {
+		case err.Error() == `ERROR: duplicate key value violates unique constraint "users_email_key" (SQLSTATE 23505)`:
+			return ErrDuplicateEmail
+		default:
+			return err
+		}
 	}
 
 	u.ID = user.ID.String()
 	return nil
 }
 
-func (s *PostgresStorage) GetMany(ctx context.Context) ([]*User, error) {
-	DbUsers, err := s.queries.GetMany(ctx)
+func (s *UserStore) GetMany(ctx context.Context) ([]*User, error) {
+	userRows, err := s.queries.GetMany(ctx)
 	var users []*User
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -102,7 +113,7 @@ func (s *PostgresStorage) GetMany(ctx context.Context) ([]*User, error) {
 		return nil, err
 	}
 
-	for _, u := range DbUsers {
+	for _, u := range userRows {
 		users = append(users, &User{
 			ID:        u.ID.String(),
 			Email:     u.Email,

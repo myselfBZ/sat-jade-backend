@@ -19,3 +19,62 @@ sql:
         package: "qpractices"
         out: "internal/queries/qpractices"
         sql_package: "pgx/v5"
+        
+  - name: modules
+    engine: "postgresql"
+    queries: "internal/queries/modules/query.sql"
+    schema: "internal/schemas/practice.sql"
+    gen:
+      go:
+        package: "modules"
+        out: "internal/queries/modules"
+        sql_package: "pgx/v5"
+
+  - name: questions
+    engine: "postgresql"
+    queries: "internal/queries/questions/query.sql"
+    schema: "internal/schemas/practice.sql"
+    gen:
+      go:
+        package: "questions"
+        out: "internal/queries/questions"
+        sql_package: "pgx/v5"
+
+  - name: answer_choices
+    engine: "postgresql"
+    queries: "internal/queries/answer_choices/query.sql"
+    schema: "internal/schemas/practice.sql"
+    gen:
+      go:
+        package: "answer_choices"
+        out: "internal/queries/answer_choices"
+        sql_package: "pgx/v5"
+  - name: results
+    engine: "postgresql"
+    queries: "internal/queries/results/query.sql"
+    schema: "internal/schemas/practice.sql"
+    gen:
+      go:
+        package: "results"
+        out: "internal/queries/results"
+        sql_package: "pgx/v5"
+
+  - name: result_answers
+    engine: "postgresql"
+    queries: "internal/queries/result_answers/query.sql"
+    schema: "internal/schemas/practice.sql"
+    gen:
+      go:
+        package: "results_answers"
+        out: "internal/queries/results_answers"
+        sql_package: "pgx/v5"
+
+  - name: feedbacks
+    engine: "postgresql"
+    queries: "internal/queries/feedbacks/query.sql"
+    schema: "internal/schemas/practice.sql"
+    gen:
+      go:
+        package: "feedbacks"
+        out: "internal/queries/feedbacks"
+        sql_package: "pgx/v5"

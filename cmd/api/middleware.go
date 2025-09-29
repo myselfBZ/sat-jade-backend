@@ -1,11 +1,13 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+	"github.com/myselfBZ/sat-jade/internal/store"
 )
 
 func (app *api) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
@@ -21,7 +23,7 @@ func (app *api) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		token := parts[1]
-		jwtToken, err := app.auth.Authenticator.ValidateToken(token)
+		jwtToken, err := app.auth.ValidateToken(token)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
 		}
@@ -37,13 +39,27 @@ func (app *api) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusUnauthorized, "invalid subject claim")
 		}
 
-		user, err := app.users.GetUser(c.Request().Context(), userID)
+		user, err := app.storage.Users.GetByID(c.Request().Context(), userID)
 		if err != nil {
+			log.Println("Error fetching user: ", err)
 			return echo.NewHTTPError(http.StatusUnauthorized, "user not found")
 		}
 
 		c.Set("user", user)
 
+		return next(c)
+	}
+}
+
+func (a *api) isAdmin(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		user, err := a.getUserFromContext(c)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
+		if user.Role != store.ROLE_ADMIN {
+			return echo.NewHTTPError(http.StatusUnauthorized, "you cant perform this action")
+		}
 		return next(c)
 	}
 }
