@@ -112,6 +112,7 @@ func (a *api) getOrCreateAIFeedbackHandler(c echo.Context) error {
 
 	feedback, err := a.llm.GeneratePracticeOverview(feedBackParam)
 	if err != nil {
+		a.internalErrLog(c.Request().Method, c.Path(), err)
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 	byteData, _ := json.Marshal(feedback)

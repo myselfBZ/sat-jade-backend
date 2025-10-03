@@ -78,3 +78,14 @@ sql:
         package: "feedbacks"
         out: "internal/queries/feedbacks"
         sql_package: "pgx/v5"
+
+
+  - name: daily_questions
+    engine: "postgresql"
+    queries: "internal/queries/daily_questions/query.sql"
+    schema: "internal/schemas/daily_questions.sql"
+    gen:
+      go:
+        package: "daily_questions"
+        out: "internal/queries/daily_questions"
+        sql_package: "pgx/v5"

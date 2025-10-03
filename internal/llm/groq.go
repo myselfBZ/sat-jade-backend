@@ -11,12 +11,6 @@ import (
 	"time"
 )
 
-func NewGroq(apiKey string) LLM {
-	return &Groq{
-		apikey: apiKey,
-	}
-}
-
 type Groq struct {
 	apikey string
 }
