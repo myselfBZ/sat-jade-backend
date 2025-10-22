@@ -58,8 +58,6 @@ func (a *api) registerRoutes() *echo.Echo {
 	results := v1.Group("/results", a.AuthMiddleware)
 	auth := v1.Group("/auth")
 
-	questions := practices.Group("/questions")
-
 	usersRouter.GET("/self", func(c echo.Context) error {
 		user := c.Get("user").(*store.User)
 		return c.JSON(http.StatusOK, user)
@@ -83,6 +81,7 @@ func (a *api) registerRoutes() *echo.Echo {
 	practices.GET("/:id", a.getPracticeByIDHandler)
 	practices.GET("/", a.getPracticePreviewsHandler)
 
+	questions := practices.Group("/questions")
 	// update method is a must
 	questions.POST("/", a.createQuestionHandler, a.isAdmin)
 	questions.POST("/daily", a.createDailyQuestionHandler, a.isAdmin)

@@ -36,6 +36,48 @@ type QuestionStore struct {
 	queries *questions.Queries
 }
 
+
+func (s *QuestionStore) GetByModuleWithChoices(ctx context.Context, moduleID int32) ([]*Question, error) {
+	rows, err := s.queries.GetByModuleWithChoices(ctx, moduleID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	questionsMap := make(map[int]int)
+	var questions []*Question
+	for _, r := range rows {
+		idx, ok := questionsMap[int(r.QuestionID)]
+		if !ok {
+			q := &Question{
+				ID:          r.QuestionID,
+				Number:      r.Number.Int32,
+				Domain:      r.Domain,
+				Difficulty:  r.Difficulty,
+				Paragraph:   r.Paragraph,
+				Prompt:      r.Prompt,
+				Explanation: r.Explanation,
+				Correct:     r.Correct,
+				ModuleID:    r.SectionID,
+			}
+			questions = append(questions, q)
+			questionsMap[int(q.ID)] = len(questions) - 1
+			idx = len(questions) - 1
+		}
+		if r.AnswerID.Valid {
+			questions[idx].AnswerChoices = append(questions[idx].AnswerChoices, &AnswerChoice{
+				ID:    r.AnswerID.Int32,
+				Label: r.AnswerLabel.String,
+				Text:  r.AnswerText.String,
+			})
+		}
+	}
+
+	return questions, nil
+}
+
+
+
 func (s *QuestionStore) GetByModuleID(ctx context.Context, moduleID int32) ([]*Question, error) {
 	questionRows, err := s.queries.GetByModuleId(ctx, moduleID)
 	if err != nil {

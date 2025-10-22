@@ -4,6 +4,28 @@ FROM question
 WHERE section_id = $1
 ORDER BY number;
 
+-- name: GetByModuleWithChoices :many
+SELECT
+    q.id AS question_id,
+    q.number,
+    q.domain,
+    q.difficulty,
+    q.svg,
+    q.paragraph,
+    q.prompt,
+    q.explanation,
+    q.correct,
+    q.section_id,
+    a.id AS answer_id,
+    a.label AS answer_label,
+    a.text AS answer_text
+FROM question q
+LEFT JOIN answer_choice a ON a.question_id = q.id
+WHERE q.section_id = $1
+ORDER BY q.number, a.label;
+
+
+
 -- name: CreateWithAnswerChoices :one
 WITH new_question AS (
     INSERT INTO question (domain, number, section_id, paragraph, correct, svg, prompt, explanation, difficulty)

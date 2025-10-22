@@ -58,11 +58,11 @@ func (s *DailyQuestionStore) GetAll(ctx context.Context) ([]*DailyQuestion, erro
 			Prompt:      q.Prompt,
 			Explanation: q.Explanation,
 			Difficulty:  q.Difficulty,
-
-			ChoiceA: q.ChoiceA.String,
-			ChoiceB: q.ChoiceB.String,
-			ChoiceC: q.ChoiceC.String,
-			ChoiceD: q.ChoiceD.String,
+			CreatedAt:   q.CreatedAt.Time,
+			ChoiceA:     q.ChoiceA.String,
+			ChoiceB:     q.ChoiceB.String,
+			ChoiceC:     q.ChoiceC.String,
+			ChoiceD:     q.ChoiceD.String,
 		})
 	}
 	return questions, nil

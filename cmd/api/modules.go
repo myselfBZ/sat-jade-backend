@@ -43,17 +43,9 @@ func (a *api) getModuleById(c echo.Context) error {
 }
 
 func (a *api) constructModule(ctx context.Context, m *store.Module) error {
-	questions, err := a.storage.Questions.GetByModuleID(ctx, m.ID)
+	questions, err := a.storage.Questions.GetByModuleWithChoices(ctx, m.ID)
 	if err != nil {
 		return err
-	}
-
-	for _, q := range questions {
-		answerChoices, err := a.storage.AnswerChoiceStorage.GetByQuestionID(ctx, q.ID)
-		if err != nil {
-			return err
-		}
-		q.AnswerChoices = append(q.AnswerChoices, answerChoices...)
 	}
 
 	m.Questions = append(m.Questions, questions...)

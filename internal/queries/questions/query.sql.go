@@ -134,3 +134,74 @@ func (q *Queries) GetByModuleId(ctx context.Context, sectionID int32) ([]GetByMo
 	}
 	return items, nil
 }
+
+const getByModuleWithChoices = `-- name: GetByModuleWithChoices :many
+SELECT
+    q.id AS question_id,
+    q.number,
+    q.domain,
+    q.difficulty,
+    q.svg,
+    q.paragraph,
+    q.prompt,
+    q.explanation,
+    q.correct,
+    q.section_id,
+    a.id AS answer_id,
+    a.label AS answer_label,
+    a.text AS answer_text
+FROM question q
+LEFT JOIN answer_choice a ON a.question_id = q.id
+WHERE q.section_id = $1
+ORDER BY q.number, a.label
+`
+
+type GetByModuleWithChoicesRow struct {
+	QuestionID  int32
+	Number      pgtype.Int4
+	Domain      string
+	Difficulty  string
+	Svg         pgtype.Text
+	Paragraph   string
+	Prompt      string
+	Explanation string
+	Correct     string
+	SectionID   int32
+	AnswerID    pgtype.Int4
+	AnswerLabel pgtype.Text
+	AnswerText  pgtype.Text
+}
+
+func (q *Queries) GetByModuleWithChoices(ctx context.Context, sectionID int32) ([]GetByModuleWithChoicesRow, error) {
+	rows, err := q.db.Query(ctx, getByModuleWithChoices, sectionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetByModuleWithChoicesRow
+	for rows.Next() {
+		var i GetByModuleWithChoicesRow
+		if err := rows.Scan(
+			&i.QuestionID,
+			&i.Number,
+			&i.Domain,
+			&i.Difficulty,
+			&i.Svg,
+			&i.Paragraph,
+			&i.Prompt,
+			&i.Explanation,
+			&i.Correct,
+			&i.SectionID,
+			&i.AnswerID,
+			&i.AnswerLabel,
+			&i.AnswerText,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
