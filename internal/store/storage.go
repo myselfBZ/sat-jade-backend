@@ -68,11 +68,6 @@ type Storage struct {
 		Create(ctx context.Context, userID uuid.UUID, resultID int32, feedback []byte) error
 	}
 
-	DailyQuestions interface {
-		Create(ctx context.Context, q *DailyQuestion) error
-		GetLatest(ctx context.Context) ([]*DailyQuestion, error)
-		GetAll(ctx context.Context) ([]*DailyQuestion, error)
-	}
 }
 
 func New(db *pgxpool.Pool) *Storage {
@@ -85,6 +80,5 @@ func New(db *pgxpool.Pool) *Storage {
 		Results:             NewResultStore(db),
 		ResultAnswers:       NewResultAnswersStore(db),
 		Feedback:            NewFeedBackStore(db),
-		DailyQuestions:      NewDailyQuestionStore(db),
 	}
 }
