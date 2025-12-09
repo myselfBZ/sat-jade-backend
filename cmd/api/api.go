@@ -84,9 +84,6 @@ func (a *api) registerRoutes() *echo.Echo {
 	questions := practices.Group("/questions")
 	// update method is a must
 	questions.POST("/", a.createQuestionHandler, a.isAdmin)
-	questions.POST("/daily", a.createDailyQuestionHandler, a.isAdmin)
-	questions.GET("/daily", a.getDailyQuestionsHandler)
-	questions.GET("/daily/all", a.getAllDailyQuestionsHandler, a.isAdmin)
 	// needs to be updated
 	auth.POST("/token", a.createTokenHandler)
 	auth.POST("/users", a.createUserHandler)
