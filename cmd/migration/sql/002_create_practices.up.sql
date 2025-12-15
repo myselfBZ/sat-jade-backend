@@ -1,17 +1,17 @@
-CREATE TABLE practice (
+CREATE TABLE IF NOT EXISTS practice (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(10) NOT NULL DEFAULT 'draft' CHECK (status IN ('ready', 'draft'))
 );
 
-CREATE TABLE module (
+CREATE TABLE IF NOT EXISTS module (
     id SERIAL PRIMARY KEY,
     practice_id INT NOT NULL REFERENCES practice(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE question (
+CREATE TABLE IF NOT EXISTS question (
     id SERIAL PRIMARY KEY,
     domain VARCHAR(50) NOT NULL,
     number INT DEFAULT 0,
@@ -24,7 +24,7 @@ CREATE TABLE question (
     difficulty VARCHAR(10) NOT NULL
 );
 
-CREATE TABLE answer_choice (
+CREATE TABLE IF NOT EXISTS answer_choice (
     id SERIAL PRIMARY KEY,
     question_id INT NOT NULL REFERENCES question(id) ON DELETE CASCADE,
     label CHAR(1) NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE answer_choice (
 );
 
 
-CREATE TABLE test_session (
+CREATE TABLE IF NOT EXISTS test_session (
     id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     practice_id INT NOT NULL REFERENCES practice(id) ON DELETE CASCADE,
@@ -43,7 +43,7 @@ CREATE TABLE test_session (
     total_score INT
 );
 
-CREATE TABLE test_session_answers (
+CREATE TABLE IF NOT EXISTS test_session_answers (
     id SERIAL PRIMARY KEY,
     user_answer CHAR(1),
     session_id INT NOT NULL REFERENCES test_session(id) ON DELETE CASCADE,

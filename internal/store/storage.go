@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/myselfBZ/sat-jade/internal/queries/qb_answers"
 )
 
 var (
@@ -42,7 +43,7 @@ type Storage struct {
 	Questions interface {
 		CreateWithAnswerChoices(ctx context.Context, moduleID int32, q *Question) error
 		GetByModuleID(ctx context.Context, moduleID int32) ([]*Question, error)
-		GetByModuleWithChoices(ctx context.Context, moduleID int32) ([]*Question, error) 
+		GetByModuleWithChoices(ctx context.Context, moduleID int32) ([]*Question, error)
 	}
 
 	AnswerChoiceStorage interface {
@@ -68,6 +69,17 @@ type Storage struct {
 		Create(ctx context.Context, userID uuid.UUID, resultID int32, feedback []byte) error
 	}
 
+	QuestionBank interface {
+		GetIdBySkill(ctx context.Context, skill string) ([]int32, error)
+		Create(ctx context.Context, q *SQBQuestion) error
+		GetCollectionDetail(ctx context.Context) ([]*CollectionDetail, error)
+		GetById(ctx context.Context, id int, userId string) (*SQBQuestion, error)
+	}
+
+	QBAnswers interface {
+		Create(ctx context.Context, a *qb_answers.CreateParams) error
+		GetByUser(ctx context.Context, userId string) ([]qb_answers.QuestionBankAnswer,error) 
+	}
 }
 
 func New(db *pgxpool.Pool) *Storage {
@@ -80,5 +92,7 @@ func New(db *pgxpool.Pool) *Storage {
 		Results:             NewResultStore(db),
 		ResultAnswers:       NewResultAnswersStore(db),
 		Feedback:            NewFeedBackStore(db),
+		QuestionBank:        NewQuestionBank(db),
+		QBAnswers:           NewQBStore(db),
 	}
 }

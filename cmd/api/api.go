@@ -88,6 +88,14 @@ func (a *api) registerRoutes() *echo.Echo {
 	auth.POST("/token", a.createTokenHandler)
 	auth.POST("/users", a.createUserHandler)
 
+	questionBank := v1.Group("/question-bank", a.AuthMiddleware)
+	questionBank.POST("/", a.createSqbQuestion, a.isAdmin)
+	questionBank.GET("/", a.getCollectionDetails)
+	questionBank.GET("/:id", a.getQuestionByID)
+	questionBank.GET("/ids/:skill", a.getQuestionIdsBySkil)
+	questionBank.POST("/answer", a.createQBAnswerHandler)
+	questionBank.GET("/myanswers", a.getAnswersByUserHandler)
+
 	return e
 }
 

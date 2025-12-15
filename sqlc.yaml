@@ -80,12 +80,23 @@ sql:
         sql_package: "pgx/v5"
 
 
-  - name: daily_questions
+  - name: question_bank
     engine: "postgresql"
-    queries: "internal/queries/daily_questions/query.sql"
-    schema: "internal/schemas/daily_questions.sql"
+    queries: "internal/queries/question_bank/query.sql"
+    schema: "cmd/migration/sql/"
     gen:
       go:
-        package: "daily_questions"
-        out: "internal/queries/daily_questions"
+        package: "question_bank"
+        out: "internal/queries/question_bank"
+        sql_package: "pgx/v5"
+          
+  - name: qb_answers 
+    engine: "postgresql"
+    queries: "internal/queries/qb_answers/query.sql"
+    schema: "cmd/migration/sql/"
+    gen:
+      go:
+        package: "qb_answers"
+        emit_json_tags: true
+        out: "internal/queries/qb_answers"
         sql_package: "pgx/v5"
