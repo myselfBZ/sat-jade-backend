@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -33,7 +34,7 @@ func (a *api) createTokenHandler(c echo.Context) error {
 	}
 
 	if payload.Email == "" || payload.Password == "" {
-		a.badRequestLog(c.Request().Method, c.Path(), nil)
+		a.badRequestLog(c.Request().Method, c.Path(), errors.New("invalid payload"))
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
