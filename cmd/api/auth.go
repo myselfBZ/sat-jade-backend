@@ -32,6 +32,11 @@ func (a *api) createTokenHandler(c echo.Context) error {
 		return err
 	}
 
+	if payload.Email == "" || payload.Password == "" {
+		a.badRequestLog(c.Request().Method, c.Path(), nil)
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
 	user, err := a.storage.Users.GetByEmail(c.Request().Context(), payload.Email)
 
 	if err != nil {
