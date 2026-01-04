@@ -24,3 +24,15 @@ func (a *api) getUsersHandler(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, users)
 }
+
+func (a *api) deleteUserHandler(c echo.Context) error {
+	userId := c.Param("id")
+	if err := a.storage.Users.Delete(c.Request().Context(), userId); err != nil {
+		a.badRequestLog(c.Request().Method, c.Path(), err)
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid id")
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"Success":"ok",
+	})
+}

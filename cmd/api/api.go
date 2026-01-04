@@ -41,7 +41,7 @@ func (a *api) registerRoutes() *echo.Echo {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{frontEndUrl},
+		AllowOrigins: []string{frontEndUrl, "http://localhost:5174"},
 		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
 		AllowHeaders: []string{
 			echo.HeaderOrigin,
@@ -64,10 +64,12 @@ func (a *api) registerRoutes() *echo.Echo {
 	})
 
 	usersRouter.GET("/", a.getUsersHandler, a.isAdmin)
+	usersRouter.DELETE("/:id", a.deleteUserHandler, a.isAdmin)
 
 	usersResults := usersRouter.Group("/results")
 	usersResults.POST("/", a.createResultHandler)
 	usersResults.GET("/", a.getUserResultsHandler)
+	usersResults.GET("/:userId", a.getAllResultsByUserHandler)
 
 	results.GET("/", a.getAllResultsHandler, a.isAdmin)
 	results.GET("/:id", a.getResultByIDHandler)

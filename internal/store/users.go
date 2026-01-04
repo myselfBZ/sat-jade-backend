@@ -126,3 +126,20 @@ func (s *UserStore) GetMany(ctx context.Context) ([]*User, error) {
 
 	return users, nil
 }
+
+func (s *UserStore) Delete(ctx context.Context, id string) error {
+	validId, err := uuid.Parse(id)
+	if err != nil {
+		return ErrInvalidUUID
+	}
+	_, err = s.queries.Delete(ctx, pgtype.UUID{
+		Bytes: validId,
+		Valid: true,
+	})
+
+	return err
+}
+
+
+
+

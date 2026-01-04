@@ -130,6 +130,31 @@ func (s *QuestionStore) CreateWithAnswerChoices(ctx context.Context, moduleID in
 		params.Label_4 = q.AnswerChoices[3].Label
 		params.Text_4 = q.AnswerChoices[3].Text
 	}
+
+
+	// for open ended questions
+	if len(q.AnswerChoices) == 1 {
+		id, err := s.queries.CreateOpenEnded(ctx, questions.CreateOpenEndedParams{
+			Domain:      q.Domain,
+			Number:      pgtype.Int4{Int32: q.Number, Valid: true},
+			SectionID:   moduleID,
+			Paragraph:   q.Paragraph,
+			Correct:     q.Correct,
+			Prompt:      q.Prompt,
+			Explanation: q.Explanation,
+			Difficulty:  q.Difficulty,
+			Label: q.AnswerChoices[0].Label,
+			Text: q.AnswerChoices[0].Text,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		q.ID = id
+		return nil
+	}
+
 	dbQuestions, err := s.queries.CreateWithAnswerChoices(ctx, params)
 	if err != nil {
 		return err

@@ -8,7 +8,7 @@ INSERT INTO test_session_answers (
 ) VALUES (
     unnest(@user_answer::char(1)[]),
     unnest(@session_id::int[]),
-    unnest(@correct_answer::char(1)[]),
+    unnest(@correct_answer::varchar(10)[]),
     unnest(@module::varchar(50)[]),
     unnest(@status::varchar(10)[])
 )

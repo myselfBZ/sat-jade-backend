@@ -42,6 +42,25 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) (User, error) {
 	return i, err
 }
 
+const delete = `-- name: Delete :one
+DELETE FROM users WHERE id = $1 RETURNING id, email, password_hash, full_name, role, created_at, updated_at
+`
+
+func (q *Queries) Delete(ctx context.Context, id pgtype.UUID) (User, error) {
+	row := q.db.QueryRow(ctx, delete, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.FullName,
+		&i.Role,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getByEmail = `-- name: GetByEmail :one
 SELECT id, email, password_hash, full_name, role, created_at, updated_at FROM users WHERE email = $1
 `

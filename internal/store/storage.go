@@ -13,6 +13,8 @@ var (
 	ErrRecordNotFound    = errors.New("record not found")
 	ErrDuplicateEmail    = errors.New("this email is already taken")
 	ErrForeignConstraint = errors.New("foreign key constraint violated")
+
+	ErrInvalidUUID = errors.New("invalid uuid")
 )
 
 type Storage struct {
@@ -21,6 +23,7 @@ type Storage struct {
 		GetByEmail(ctx context.Context, email string) (*User, error)
 		GetByID(ctx context.Context, id string) (*User, error)
 		GetMany(ctx context.Context) ([]*User, error)
+		Delete(ctc context.Context, id string) error
 	}
 
 	Practices interface {
@@ -78,7 +81,7 @@ type Storage struct {
 
 	QBAnswers interface {
 		Create(ctx context.Context, a *qb_answers.CreateParams) error
-		GetByUser(ctx context.Context, userId string) ([]qb_answers.QuestionBankAnswer,error) 
+		GetByUser(ctx context.Context, userId string) ([]qb_answers.QuestionBankAnswer, error)
 	}
 }
 

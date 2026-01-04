@@ -11,6 +11,61 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createOpenEnded = `-- name: CreateOpenEnded :one
+WITH new_question AS (
+    INSERT INTO question (domain, number, section_id, paragraph, correct, svg, prompt, explanation, difficulty)
+    VALUES (
+        $1,  -- domain
+        $2,  -- number
+        $3,  -- section_id
+        $4,  -- paragraph
+        $5,  -- correct
+        $6,  -- svg (can be NULL)
+        $7,  -- prompt
+        $8,  -- explanation
+        $9   -- difficulty
+    )
+    RETURNING id
+)
+INSERT INTO answer_choice (question_id, label, text)
+VALUES
+    ((SELECT id FROM new_question), $10, $11)
+RETURNING (SELECT id FROM new_question)
+`
+
+type CreateOpenEndedParams struct {
+	Domain      string
+	Number      pgtype.Int4
+	SectionID   int32
+	Paragraph   string
+	Correct     string
+	Svg         pgtype.Text
+	Prompt      string
+	Explanation string
+	Difficulty  string
+	Label       string
+	Text        string
+}
+
+func (q *Queries) CreateOpenEnded(ctx context.Context, arg CreateOpenEndedParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createOpenEnded,
+		arg.Domain,
+		arg.Number,
+		arg.SectionID,
+		arg.Paragraph,
+		arg.Correct,
+		arg.Svg,
+		arg.Prompt,
+		arg.Explanation,
+		arg.Difficulty,
+		arg.Label,
+		arg.Text,
+	)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
 const createWithAnswerChoices = `-- name: CreateWithAnswerChoices :one
 WITH new_question AS (
     INSERT INTO question (domain, number, section_id, paragraph, correct, svg, prompt, explanation, difficulty)

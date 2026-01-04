@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS test_session_answers (
     id SERIAL PRIMARY KEY,
     user_answer CHAR(1),
     session_id INT NOT NULL REFERENCES test_session(id) ON DELETE CASCADE,
-    correct_answer CHAR(1) NOT NULL,
+    correct_answer VARCHAR(10) NOT NULL,
     module VARCHAR(50) NOT NULL,
     status VARCHAR(10) NOT NULL DEFAULT 'omitted' CHECK (status IN ('correct', 'incorrect', 'omitted'))
 );

@@ -9,3 +9,6 @@ SELECT * FROM users WHERE email = $1;
 
 -- name: GetMany :many
 SELECT * FROM users;
+
+-- name: Delete :one
+DELETE FROM users WHERE id = $1 RETURNING *;

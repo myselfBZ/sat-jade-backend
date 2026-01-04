@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/myselfBZ/sat-jade/internal/answer_eval"
 	"github.com/labstack/echo/v4"
 	"github.com/myselfBZ/sat-jade/internal/store"
 )
@@ -63,6 +64,35 @@ func (a *api) createResultHandler(c echo.Context) error {
 	mathCorrect := 0
 	for _, m := range practice.Modules {
 		for _, q := range m.Questions {
+			if len(q.AnswerChoices) == 1{
+				correct, err := answereval.EvaluateAnswer(
+					p.Answers[answerIdx],
+					q.AnswerChoices[0].Text,
+				)
+				answer := &store.ResultAnswer{}
+
+				if correct && err == nil {
+					answer.UserAnswer = p.Answers[answerIdx]
+					answer.CorrectAnswer = q.Correct
+					answer.Status = "correct"
+					answer.Module = q.Module
+				} else {
+					answer.UserAnswer = p.Answers[answerIdx]
+					answer.CorrectAnswer = q.Correct
+					answer.Status = "incorrect"
+					answer.Module = q.Module
+				}
+
+				answers = append(answers, answer)
+				if answerIdx < 54 {
+					rwCorrect++
+				} else {
+					mathCorrect++
+				}
+				answerIdx++
+				continue
+			}
+
 			if q.Correct == p.Answers[answerIdx] {
 				answers = append(answers, &store.ResultAnswer{
 					UserAnswer:    p.Answers[answerIdx],
@@ -135,6 +165,18 @@ func (a *api) getUserResultsHandler(c echo.Context) error {
 		}
 	}
 	return c.JSON(http.StatusOK, resultPreviews)
+}
+
+func (a *api) getAllResultsByUserHandler(c echo.Context) error {
+	userId := c.Param("userId")
+	results, err := a.storage.Results.GetByUserID(c.Request().Context(), userId)
+
+	if err != nil {
+		a.notFoundLog(c.Request().Method, c.Path(), err)
+		return echo.NewHTTPError(http.StatusNotFound)
+	}
+
+	return c.JSON(http.StatusOK, results)
 }
 
 func (a *api) getAllResultsHandler(c echo.Context) error {
@@ -217,9 +259,11 @@ func (a *api) getResultByIDHandler(c echo.Context) error {
 		answers[questionsIndex].Question = q.Prompt
 		answers[questionsIndex].Number = q.Number
 		answers[questionsIndex].ChoiceA = q.AnswerChoices[0].Text
-		answers[questionsIndex].ChoiceB = q.AnswerChoices[1].Text
-		answers[questionsIndex].ChoiceC = q.AnswerChoices[2].Text
-		answers[questionsIndex].ChoiceD = q.AnswerChoices[3].Text
+		if len(q.AnswerChoices) == 4 {
+			answers[questionsIndex].ChoiceB = q.AnswerChoices[1].Text
+			answers[questionsIndex].ChoiceC = q.AnswerChoices[2].Text
+			answers[questionsIndex].ChoiceD = q.AnswerChoices[3].Text
+		}
 		answers[questionsIndex].Explanation = q.Explanation
 
 		questionsIndex += 1

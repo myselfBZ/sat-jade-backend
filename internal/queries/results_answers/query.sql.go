@@ -19,7 +19,7 @@ INSERT INTO test_session_answers (
 ) VALUES (
     unnest($1::char(1)[]),
     unnest($2::int[]),
-    unnest($3::char(1)[]),
+    unnest($3::varchar(10)[]),
     unnest($4::varchar(50)[]),
     unnest($5::varchar(10)[])
 )

@@ -26,6 +26,28 @@ ORDER BY q.number, a.label;
 
 
 
+-- name: CreateOpenEnded :one
+WITH new_question AS (
+    INSERT INTO question (domain, number, section_id, paragraph, correct, svg, prompt, explanation, difficulty)
+    VALUES (
+        $1,  -- domain
+        $2,  -- number
+        $3,  -- section_id
+        $4,  -- paragraph
+        $5,  -- correct
+        $6,  -- svg (can be NULL)
+        $7,  -- prompt
+        $8,  -- explanation
+        $9   -- difficulty
+    )
+    RETURNING id
+)
+INSERT INTO answer_choice (question_id, label, text)
+VALUES
+    ((SELECT id FROM new_question), $10, $11)
+RETURNING (SELECT id FROM new_question);
+
+
 -- name: CreateWithAnswerChoices :one
 WITH new_question AS (
     INSERT INTO question (domain, number, section_id, paragraph, correct, svg, prompt, explanation, difficulty)
