@@ -12,12 +12,6 @@ type practiceRequestPayload struct {
 	Title string `json:"title"`
 }
 
-type practiceResponsePayload struct {
-	ID      int32           `json:"id"`
-	Title   string          `json:"title"`
-	Modules []*store.Module `json:"sections"`
-}
-
 func (a *api) createPracticeHandler(c echo.Context) error {
 	var payload practiceRequestPayload
 	if err := c.Bind(&payload); err != nil {
@@ -82,11 +76,7 @@ func (a *api) getPracticeByIDHandler(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, &practiceResponsePayload{
-		ID:      practice.ID,
-		Title:   practice.Title,
-		Modules: practice.Modules,
-	})
+	return c.JSON(http.StatusOK, practice)
 }
 
 func (a *api) getPracticePreviewsHandler(c echo.Context) error {

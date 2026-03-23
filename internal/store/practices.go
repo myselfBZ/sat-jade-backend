@@ -14,7 +14,7 @@ type Practice struct {
 	CreatedAt time.Time `json:"created_at"`
 	ID        int32     `json:"id"`
 	Title     string    `json:"title"`
-	Modules   []*Module `json:"sections"`
+	Modules   []Module `json:"sections"`
 }
 
 type PracticePreview struct {
