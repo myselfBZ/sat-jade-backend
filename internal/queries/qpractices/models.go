@@ -15,6 +15,18 @@ type AnswerChoice struct {
 	Text       string
 }
 
+type DailyQuestion struct {
+	ID          int32
+	Domain      string
+	Paragraph   string
+	Correct     string
+	Svg         pgtype.Text
+	Prompt      string
+	Explanation string
+	Difficulty  string
+	CreatedAt   pgtype.Timestamp
+}
+
 type Module struct {
 	ID         int32
 	PracticeID int32
@@ -41,6 +53,33 @@ type Question struct {
 	Difficulty  string
 }
 
+type QuestionBank struct {
+	ID          int32
+	Domain      string
+	Paragraph   string
+	Skill       pgtype.Text
+	QuestionID  pgtype.Text
+	Correct     string
+	Prompt      string
+	Explanation string
+	Difficulty  string
+	AnswerType  pgtype.Text
+	Active      pgtype.Bool
+	ChoiceA     pgtype.Text
+	ChoiceB     pgtype.Text
+	ChoiceC     pgtype.Text
+	ChoiceD     pgtype.Text
+}
+
+type QuestionBankAnswer struct {
+	Answer           string
+	UserID           pgtype.UUID
+	QuestionID       int32
+	CreatedAt        pgtype.Timestamptz
+	Status           string
+	ResponseDuration pgtype.Int4
+}
+
 type TestSession struct {
 	ID           int32
 	UserID       pgtype.UUID
@@ -59,4 +98,14 @@ type TestSessionAnswer struct {
 	CorrectAnswer string
 	Module        string
 	Status        string
+}
+
+type User struct {
+	ID           pgtype.UUID
+	Email        string
+	PasswordHash string
+	FullName     string
+	Role         string
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }

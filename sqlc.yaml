@@ -3,7 +3,7 @@ sql:
   - name: users
     engine: "postgresql"
     queries: "internal/queries/users/query.sql"
-    schema: "internal/schemas/users.sql"
+    schema: "cmd/migration/sql"
     gen:
       go:
         package: "qusers"
@@ -13,7 +13,7 @@ sql:
   - name: practices
     engine: "postgresql"
     queries: "internal/queries/qpractices/query.sql"
-    schema: "internal/schemas/practice.sql"
+    schema: "cmd/migration/sql"
     gen:
       go:
         package: "qpractices"
@@ -23,7 +23,7 @@ sql:
   - name: modules
     engine: "postgresql"
     queries: "internal/queries/modules/query.sql"
-    schema: "internal/schemas/practice.sql"
+    schema: "cmd/migration/sql"
     gen:
       go:
         package: "modules"
@@ -33,7 +33,7 @@ sql:
   - name: questions
     engine: "postgresql"
     queries: "internal/queries/questions/query.sql"
-    schema: "internal/schemas/practice.sql"
+    schema: "cmd/migration/sql"
     gen:
       go:
         package: "questions"
@@ -43,7 +43,7 @@ sql:
   - name: answer_choices
     engine: "postgresql"
     queries: "internal/queries/answer_choices/query.sql"
-    schema: "internal/schemas/practice.sql"
+    schema: "cmd/migration/sql"
     gen:
       go:
         package: "answer_choices"
@@ -52,7 +52,7 @@ sql:
   - name: results
     engine: "postgresql"
     queries: "internal/queries/results/query.sql"
-    schema: "internal/schemas/practice.sql"
+    schema: "cmd/migration/sql"
     gen:
       go:
         package: "results"
@@ -62,7 +62,7 @@ sql:
   - name: result_answers
     engine: "postgresql"
     queries: "internal/queries/result_answers/query.sql"
-    schema: "internal/schemas/practice.sql"
+    schema: "cmd/migration/sql"
     gen:
       go:
         package: "results_answers"
@@ -72,7 +72,7 @@ sql:
   - name: feedbacks
     engine: "postgresql"
     queries: "internal/queries/feedbacks/query.sql"
-    schema: "internal/schemas/practice.sql"
+    schema: "cmd/migration/sql"
     gen:
       go:
         package: "feedbacks"
