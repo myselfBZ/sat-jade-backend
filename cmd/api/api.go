@@ -54,7 +54,6 @@ func (a *api) registerRoutes() *echo.Echo {
 	v1 := e.Group("/v1")
 	usersRouter := v1.Group("/users", a.AuthMiddleware)
 	practices := v1.Group("/practices", a.AuthMiddleware)
-	modules := v1.Group("/modules", a.AuthMiddleware)
 	results := v1.Group("/results", a.AuthMiddleware)
 	auth := v1.Group("/auth")
 
@@ -76,7 +75,6 @@ func (a *api) registerRoutes() *echo.Echo {
 	results.DELETE("/:id", a.deleteResultByIDHandler)
 	results.POST("/:id/feedback", a.getOrCreateAIFeedbackHandler)
 
-	modules.GET("/:id", a.getModuleById)
 
 	practices.POST("/", a.createPracticeHandler, a.isAdmin)
 	practices.DELETE("/:id", a.deletePracticeHandler, a.isAdmin)

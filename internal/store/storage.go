@@ -27,14 +27,14 @@ type Storage struct {
 	}
 
 	Practices interface {
-		GetById(ctx context.Context, id int32) (*Practice, error)
 		Delete(ctx context.Context, id int32) error
+
 		// Fetches the preview of practice tests
 		// If there is none, empty slice will be returned
 		// []*PracticePrview
-
 		GetAllPreview(ctx context.Context) ([]*PracticePreview, error)
 		Create(ctx context.Context, title string) (int32, error)
+		GetFullTest(ctx context.Context, id int32) (*Practice, error) 
 	}
 
 	Modules interface {

@@ -66,22 +66,89 @@ func (q *Queries) Delete(ctx context.Context, id int32) (Practice, error) {
 	return i, err
 }
 
-const getById = `-- name: GetById :one
-SELECT id, title, created_at
-FROM practice 
-WHERE id = $1
+const getCorrectAnswers = `-- name: GetCorrectAnswers :many
+SELECT 
+    q.correct
+FROM module m
+JOIN question q ON q.section_id = m.id
+WHERE m.practice_id = $1
+ORDER BY m.id, q.number
 `
 
-type GetByIdRow struct {
+func (q *Queries) GetCorrectAnswers(ctx context.Context, practiceID int32) ([]string, error) {
+	rows, err := q.db.Query(ctx, getCorrectAnswers, practiceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var correct string
+		if err := rows.Scan(&correct); err != nil {
+			return nil, err
+		}
+		items = append(items, correct)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFullPracticeTest = `-- name: GetFullPracticeTest :one
+SELECT 
+    p.id, 
+    p.title, 
+    p.created_at,
+    (
+        SELECT json_agg(m_data)
+        FROM (
+            SELECT 
+                m.id, 
+                m.name,
+                (
+                    SELECT json_agg(q_data)
+                    FROM (
+                        SELECT 
+                            q.id, q.number, q.domain, q.difficulty, q.svg, 
+                            q.paragraph, q.prompt, q.explanation, q.correct,
+                            json_agg(json_build_object(
+                                'id', a.id, 
+                                'label', a.label, 
+                                'text', a.text
+                            ) ORDER BY a.label) AS choices
+                        FROM question q
+                        LEFT JOIN answer_choice a ON a.question_id = q.id
+                        WHERE q.section_id = m.id
+                        GROUP BY q.id
+                        ORDER BY q.number
+                    ) q_data
+                ) AS questions
+            FROM module m
+            WHERE m.practice_id = p.id
+            ORDER BY m.id
+        ) m_data
+    ) AS sections
+FROM practice p
+WHERE p.id = $1
+`
+
+type GetFullPracticeTestRow struct {
 	ID        int32
 	Title     string
 	CreatedAt pgtype.Timestamp
+	Sections  []byte
 }
 
-func (q *Queries) GetById(ctx context.Context, id int32) (GetByIdRow, error) {
-	row := q.db.QueryRow(ctx, getById, id)
-	var i GetByIdRow
-	err := row.Scan(&i.ID, &i.Title, &i.CreatedAt)
+func (q *Queries) GetFullPracticeTest(ctx context.Context, id int32) (GetFullPracticeTestRow, error) {
+	row := q.db.QueryRow(ctx, getFullPracticeTest, id)
+	var i GetFullPracticeTestRow
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.CreatedAt,
+		&i.Sections,
+	)
 	return i, err
 }
 

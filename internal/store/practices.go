@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -33,27 +34,6 @@ func NewPracticeStore(db *pgxpool.Pool) *PracticeStore {
 	}
 }
 
-func (s *PracticeStore) GetById(ctx context.Context, id int32) (*Practice, error) {
-	practiceRow, err := s.queries.GetById(ctx, id)
-
-	if err != nil {
-		switch err {
-		case pgx.ErrNoRows:
-			return nil, ErrRecordNotFound
-		default:
-			return nil, err
-		}
-	}
-
-	practice := &Practice{
-		ID:        practiceRow.ID,
-		Title:     practiceRow.Title,
-		CreatedAt: practiceRow.CreatedAt.Time,
-		Modules:   []*Module{},
-	}
-
-	return practice, nil
-}
 
 func (s *PracticeStore) GetAllPreview(ctx context.Context) ([]*PracticePreview, error) {
 	practicesDB, err := s.queries.GetPracticePreviews(ctx)
@@ -85,4 +65,29 @@ func (s *PracticeStore) Create(ctx context.Context, title string) (int32, error)
 func (s *PracticeStore) Delete(ctx context.Context, id int32) error {
 	_, err := s.queries.Delete(ctx, id)
 	return err
+}
+
+func (s *PracticeStore) GetFullTest(ctx context.Context, id int32) (*Practice, error) {
+	row, err := s.queries.GetFullPracticeTest(ctx, id)
+
+	if err != nil {
+		switch err {
+		case pgx.ErrNoRows:
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	var practice Practice
+
+	practice.CreatedAt = row.CreatedAt.Time
+	practice.Title = row.Title
+	practice.ID = row.ID
+
+	if err := json.Unmarshal(row.Sections, &practice.Modules); err != nil {
+		return nil, err
+	}
+
+	return &practice, nil
 }

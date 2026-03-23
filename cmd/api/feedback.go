@@ -63,7 +63,7 @@ func (a *api) getOrCreateAIFeedbackHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	practice, err := a.storage.Practices.GetById(c.Request().Context(), result.PracticeId)
+	practice, err := a.storage.Practices.GetFullTest(c.Request().Context(), result.PracticeId)
 
 	if err != nil {
 		switch err {
@@ -74,10 +74,6 @@ func (a *api) getOrCreateAIFeedbackHandler(c echo.Context) error {
 			a.internalErrLog(c.Request().Method, c.Path(), err)
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
-	}
-
-	if err := a.constructPracticeTest(c.Request().Context(), practice); err != nil {
-		return err
 	}
 
 	var questions []*store.Question

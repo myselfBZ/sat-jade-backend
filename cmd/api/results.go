@@ -29,19 +29,8 @@ func (a *api) createResultHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	practice, err := a.storage.Practices.GetById(c.Request().Context(), p.ExamID)
+	practice, err := a.storage.Practices.GetFullTest(c.Request().Context(), p.ExamID)
 	if err != nil {
-		switch err {
-		case store.ErrRecordNotFound:
-			a.notFoundLog(c.Request().Method, c.Path(), err)
-			return echo.NewHTTPError(http.StatusNotFound)
-		default:
-			a.internalErrLog(c.Request().Method, c.Path(), err)
-			return echo.NewHTTPError(http.StatusInternalServerError)
-		}
-	}
-
-	if err := a.constructPracticeTest(c.Request().Context(), practice); err != nil {
 		switch err {
 		case store.ErrRecordNotFound:
 			a.notFoundLog(c.Request().Method, c.Path(), err)
@@ -224,20 +213,9 @@ func (a *api) getResultByIDHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 	// attach question data. must do
-	practice, err := a.storage.Practices.GetById(c.Request().Context(), session.PracticeId)
+	practice, err := a.storage.Practices.GetFullTest(c.Request().Context(), session.PracticeId)
 
 	if err != nil {
-		switch err {
-		case store.ErrRecordNotFound:
-			a.notFoundLog(c.Request().Method, c.Path(), err)
-			return echo.NewHTTPError(http.StatusNotFound)
-		default:
-			a.internalErrLog(c.Request().Method, c.Path(), err)
-			return echo.NewHTTPError(http.StatusInternalServerError)
-		}
-	}
-
-	if err := a.constructPracticeTest(c.Request().Context(), practice); err != nil {
 		switch err {
 		case store.ErrRecordNotFound:
 			a.notFoundLog(c.Request().Method, c.Path(), err)

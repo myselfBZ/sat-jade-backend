@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 
@@ -70,20 +69,9 @@ func (a *api) getPracticeByIDHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid id")
 	}
 
-	practice, err := a.storage.Practices.GetById(c.Request().Context(), int32(validId))
+	practice, err := a.storage.Practices.GetFullTest(c.Request().Context(), int32(validId))
 
 	if err != nil {
-		switch err {
-		case store.ErrRecordNotFound:
-			a.notFoundLog(c.Request().Method, c.Path(), err)
-			return echo.NewHTTPError(http.StatusNotFound, "practice test not found")
-		default:
-			a.internalErrLog(c.Request().Method, c.Path(), err)
-			return echo.NewHTTPError(http.StatusInternalServerError)
-		}
-	}
-
-	if err := a.constructPracticeTest(c.Request().Context(), practice); err != nil {
 		switch err {
 		case store.ErrRecordNotFound:
 			a.notFoundLog(c.Request().Method, c.Path(), err)
@@ -110,21 +98,3 @@ func (a *api) getPracticePreviewsHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, practices)
 }
 
-// helper
-func (a *api) constructPracticeTest(ctx context.Context, p *store.Practice) error {
-	modules, err := a.storage.Modules.GetAllByPracticeID(ctx, p.ID)
-
-	if err != nil {
-		return err
-	}
-
-	for _, m := range modules {
-		if err := a.constructModule(ctx, m); err != nil {
-			return err
-		}
-	}
-
-	p.Modules = modules
-
-	return nil
-}
