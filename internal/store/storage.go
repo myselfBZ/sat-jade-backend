@@ -35,6 +35,7 @@ type Storage struct {
 		GetAllPreview(ctx context.Context) ([]*PracticePreview, error)
 		Create(ctx context.Context, title string) (int32, error)
 		GetFullTest(ctx context.Context, id int32) (*Practice, error) 
+		GetCorrectAnswers(ctx context.Context, id int32) ([]string, error)
 	}
 
 	Modules interface {

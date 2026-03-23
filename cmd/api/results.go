@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/myselfBZ/sat-jade/internal/answer_eval"
 	"github.com/labstack/echo/v4"
+	"github.com/myselfBZ/sat-jade/internal/grading"
 	"github.com/myselfBZ/sat-jade/internal/store"
 )
 
@@ -29,7 +29,7 @@ func (a *api) createResultHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	practice, err := a.storage.Practices.GetFullTest(c.Request().Context(), p.ExamID)
+	correctAnswers, err := a.storage.Practices.GetCorrectAnswers(c.Request().Context(), p.ExamID)
 	if err != nil {
 		switch err {
 		case store.ErrRecordNotFound:
@@ -41,89 +41,16 @@ func (a *api) createResultHandler(c echo.Context) error {
 		}
 	}
 
-	result := &store.Result{
-		UserId:     user.ID,
-		PracticeId: practice.ID,
-	}
-	var answers []*store.ResultAnswer
-
-	answerIdx := 0
-
-	rwCorrect := 0
-	mathCorrect := 0
-	for _, m := range practice.Modules {
-		for _, q := range m.Questions {
-			if len(q.AnswerChoices) == 1{
-				correct, err := answereval.EvaluateAnswer(
-					p.Answers[answerIdx],
-					q.AnswerChoices[0].Text,
-				)
-				answer := &store.ResultAnswer{}
-
-				if correct && err == nil {
-					answer.UserAnswer = p.Answers[answerIdx]
-					answer.CorrectAnswer = q.Correct
-					answer.Status = "correct"
-					answer.Module = q.Module
-				} else {
-					answer.UserAnswer = p.Answers[answerIdx]
-					answer.CorrectAnswer = q.Correct
-					answer.Status = "incorrect"
-					answer.Module = q.Module
-				}
-
-				answers = append(answers, answer)
-				if answerIdx < 54 {
-					rwCorrect++
-				} else {
-					mathCorrect++
-				}
-				answerIdx++
-				continue
-			}
-
-			if q.Correct == p.Answers[answerIdx] {
-				answers = append(answers, &store.ResultAnswer{
-					UserAnswer:    p.Answers[answerIdx],
-					CorrectAnswer: q.Correct,
-					Module:        m.Name,
-					Status:        "correct",
-				})
-				if answerIdx < 54 {
-					rwCorrect++
-				} else {
-					mathCorrect++
-				}
-			} else if p.Answers[answerIdx] == "" {
-				answers = append(answers, &store.ResultAnswer{
-					UserAnswer:    p.Answers[answerIdx],
-					CorrectAnswer: q.Correct,
-					Module:        m.Name,
-					Status:        "omitted",
-				})
-			} else {
-				answers = append(answers, &store.ResultAnswer{
-					UserAnswer:    p.Answers[answerIdx],
-					CorrectAnswer: q.Correct,
-					Module:        m.Name,
-					Status:        "incorrect",
-				})
-			}
-			answerIdx++
-		}
-
-	}
-	rwScore, mathScore, totalScore := Score(rwCorrect, mathCorrect)
-	result.MathScore = int32(mathScore)
-	result.EnglishScore = int32(rwScore)
-	result.TotalScore = int32(totalScore)
+	result := grading.Check(p.Answers, correctAnswers)
+	result.UserId = user.ID
+	result.PracticeId = p.ExamID
 
 	if err := a.storage.Results.Create(c.Request().Context(), result); err != nil {
 		a.internalErrLog(c.Request().Method, c.Path(), err)
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	if err := a.storage.ResultAnswers.CreateMany(c.Request().Context(), result.ID, answers); err != nil {
+	if err := a.storage.ResultAnswers.CreateMany(c.Request().Context(), result.ID, result.Answers); err != nil {
 		a.internalErrLog(c.Request().Method, c.Path(), err)
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}

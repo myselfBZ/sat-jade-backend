@@ -91,3 +91,7 @@ func (s *PracticeStore) GetFullTest(ctx context.Context, id int32) (*Practice, e
 
 	return &practice, nil
 }
+
+func (s *PracticeStore) GetCorrectAnswers(ctx context.Context, id int32) ([]string, error) {
+	return s.queries.GetCorrectAnswers(ctx, id)
+}
