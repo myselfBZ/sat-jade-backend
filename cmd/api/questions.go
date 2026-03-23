@@ -17,7 +17,7 @@ type questionPayload struct {
 	Paragraph     string                `json:"paragraph"`
 	Prompt        string                `json:"prompt"`
 	Explanation   string                `json:"explanation"`
-	AnswerChoices []*store.AnswerChoice `json:"choices"`
+	AnswerChoices []store.AnswerChoice `json:"choices"`
 }
 
 func (a *api) createQuestionHandler(c echo.Context) error {

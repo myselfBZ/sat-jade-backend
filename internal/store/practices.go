@@ -35,20 +35,20 @@ func NewPracticeStore(db *pgxpool.Pool) *PracticeStore {
 }
 
 
-func (s *PracticeStore) GetAllPreview(ctx context.Context) ([]*PracticePreview, error) {
+func (s *PracticeStore) GetAllPreview(ctx context.Context) ([]PracticePreview, error) {
 	practicesDB, err := s.queries.GetPracticePreviews(ctx)
 	if err != nil {
 		switch err {
 		case pgx.ErrNoRows:
 			// empty slice instead of error
-			return []*PracticePreview{}, nil
+			return []PracticePreview{}, nil
 		default:
 			return nil, err
 		}
 	}
-	var practices []*PracticePreview
+	var practices []PracticePreview
 	for _, p := range practicesDB {
-		practices = append(practices, &PracticePreview{
+		practices = append(practices, PracticePreview{
 			Title:     p.Title,
 			CreatedAt: p.CreatedAt.Time,
 			ID:        p.ID,

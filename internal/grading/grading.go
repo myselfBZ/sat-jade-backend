@@ -71,7 +71,7 @@ func getModuleNameFromIdx(responseIdx int) string {
 
 func Check(studentResponse []string, correctAnswers []string) *store.Result {
 	var result store.Result
-	var answers []*store.ResultAnswer
+	var answers []store.ResultAnswer
 
 	rwCorrect := 0
 	mathCorrect := 0
@@ -96,7 +96,7 @@ func Check(studentResponse []string, correctAnswers []string) *store.Result {
 			answer.Status = "incorrect"
 		}
 
-		answers = append(answers, &answer)
+		answers = append(answers, answer)
 	}
 
 	rwScore, mathScore, totalScore := Score(rwCorrect, mathCorrect)

@@ -22,7 +22,7 @@ type Question struct {
 	Paragraph     string          `json:"paragraph"`
 	Prompt        string          `json:"prompt"`
 	Explanation   string          `json:"explanation"`
-	AnswerChoices []*AnswerChoice `json:"choices"`
+	AnswerChoices []AnswerChoice `json:"choices"`
 }
 
 func NewQuestionStore(db *pgxpool.Pool) *QuestionStore {
@@ -36,8 +36,7 @@ type QuestionStore struct {
 	queries *questions.Queries
 }
 
-
-func (s *QuestionStore) GetByModuleWithChoices(ctx context.Context, moduleID int32) ([]*Question, error) {
+func (s *QuestionStore) GetByModuleWithChoices(ctx context.Context, moduleID int32) ([]Question, error) {
 	rows, err := s.queries.GetByModuleWithChoices(ctx, moduleID)
 
 	if err != nil {
@@ -45,11 +44,11 @@ func (s *QuestionStore) GetByModuleWithChoices(ctx context.Context, moduleID int
 	}
 
 	questionsMap := make(map[int]int)
-	var questions []*Question
+	var questions []Question
 	for _, r := range rows {
 		idx, ok := questionsMap[int(r.QuestionID)]
 		if !ok {
-			q := &Question{
+			q := Question{
 				ID:          r.QuestionID,
 				Number:      r.Number.Int32,
 				Domain:      r.Domain,
@@ -65,7 +64,7 @@ func (s *QuestionStore) GetByModuleWithChoices(ctx context.Context, moduleID int
 			idx = len(questions) - 1
 		}
 		if r.AnswerID.Valid {
-			questions[idx].AnswerChoices = append(questions[idx].AnswerChoices, &AnswerChoice{
+			questions[idx].AnswerChoices = append(questions[idx].AnswerChoices, AnswerChoice{
 				ID:    r.AnswerID.Int32,
 				Label: r.AnswerLabel.String,
 				Text:  r.AnswerText.String,
@@ -78,7 +77,7 @@ func (s *QuestionStore) GetByModuleWithChoices(ctx context.Context, moduleID int
 
 
 
-func (s *QuestionStore) GetByModuleID(ctx context.Context, moduleID int32) ([]*Question, error) {
+func (s *QuestionStore) GetByModuleID(ctx context.Context, moduleID int32) ([]Question, error) {
 	questionRows, err := s.queries.GetByModuleId(ctx, moduleID)
 	if err != nil {
 		switch err {
@@ -88,9 +87,9 @@ func (s *QuestionStore) GetByModuleID(ctx context.Context, moduleID int32) ([]*Q
 			return nil, err
 		}
 	}
-	var quests []*Question
+	var quests []Question
 	for _, questionRow := range questionRows {
-		quests = append(quests, &Question{
+		quests = append(quests, Question{
 			ID:            questionRow.ID,
 			Number:        questionRow.Number.Int32,
 			Domain:        questionRow.Domain,
@@ -99,7 +98,7 @@ func (s *QuestionStore) GetByModuleID(ctx context.Context, moduleID int32) ([]*Q
 			Prompt:        questionRow.Prompt,
 			Explanation:   questionRow.Explanation,
 			Correct:       questionRow.Correct,
-			AnswerChoices: []*AnswerChoice{},
+			AnswerChoices: []AnswerChoice{},
 		})
 	}
 	return quests, nil

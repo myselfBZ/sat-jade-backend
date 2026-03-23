@@ -103,9 +103,9 @@ func (s *UserStore) Create(ctx context.Context, u *User) error {
 	return nil
 }
 
-func (s *UserStore) GetMany(ctx context.Context) ([]*User, error) {
+func (s *UserStore) GetMany(ctx context.Context) ([]User, error) {
 	userRows, err := s.queries.GetMany(ctx)
-	var users []*User
+	var users []User
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return users, nil
@@ -114,7 +114,7 @@ func (s *UserStore) GetMany(ctx context.Context) ([]*User, error) {
 	}
 
 	for _, u := range userRows {
-		users = append(users, &User{
+		users = append(users, User{
 			ID:        u.ID.String(),
 			Email:     u.Email,
 			FullName:  u.FullName,

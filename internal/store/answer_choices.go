@@ -26,7 +26,7 @@ type AnswerChoiceStore struct {
 	queries *answer_choices.Queries
 }
 
-func (s *AnswerChoiceStore) GetByQuestionID(ctx context.Context, questID int32) ([]*AnswerChoice, error) {
+func (s *AnswerChoiceStore) GetByQuestionID(ctx context.Context, questID int32) ([]AnswerChoice, error) {
 	answerChoiceRows, err := s.queries.GetByQuestionId(ctx, questID)
 	if err != nil {
 		switch err {
@@ -36,9 +36,9 @@ func (s *AnswerChoiceStore) GetByQuestionID(ctx context.Context, questID int32) 
 			return nil, err
 		}
 	}
-	var answerChoices []*AnswerChoice
+	var answerChoices []AnswerChoice
 	for _, answerChoiceRow := range answerChoiceRows {
-		answerChoices = append(answerChoices, &AnswerChoice{
+		answerChoices = append(answerChoices, AnswerChoice{
 			QuestionID: answerChoiceRow.ID,
 			ID:         answerChoiceRow.ID,
 			Text:       answerChoiceRow.Text,

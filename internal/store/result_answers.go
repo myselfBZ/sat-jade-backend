@@ -38,19 +38,19 @@ func NewResultAnswersStore(db *pgxpool.Pool) *ResultAnswersStore {
 	}
 }
 
-func (s *ResultAnswersStore) GetByResultID(ctx context.Context, resultID int32) ([]*ResultAnswer, error) {
+func (s *ResultAnswersStore) GetByResultID(ctx context.Context, resultID int32) ([]ResultAnswer, error) {
 	answersRow, err := s.queries.GetByResultID(ctx, resultID)
 	if err != nil {
 		switch err {
 		case pgx.ErrNoRows:
-			return []*ResultAnswer{}, nil
+			return []ResultAnswer{}, nil
 		default:
 			return nil, err
 		}
 	}
-	var answers []*ResultAnswer
+	var answers []ResultAnswer
 	for _, a := range answersRow {
-		answers = append(answers, &ResultAnswer{
+		answers = append(answers, ResultAnswer{
 			ID:            a.ID,
 			UserAnswer:    a.UserAnswer.String,
 			ResultID:      a.SessionID,
@@ -62,7 +62,7 @@ func (s *ResultAnswersStore) GetByResultID(ctx context.Context, resultID int32) 
 	return answers, nil
 }
 
-func (s *ResultAnswersStore) CreateMany(ctx context.Context, resultID int32, answers []*ResultAnswer) error {
+func (s *ResultAnswersStore) CreateMany(ctx context.Context, resultID int32, answers []ResultAnswer) error {
 	params := results_answers.CreateManyParams{
 		UserAnswer:    make([]string, len(answers)),
 		SessionID:     make([]int32, len(answers)),

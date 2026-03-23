@@ -35,7 +35,7 @@ type SQBQuestion struct {
 type CollectionDetail struct {
 	Quantity int      `json:"quantity"`
 	Domain   string   `json:"domain"`
-	Skills   []*Skill `json:"skills"`
+	Skills   []Skill `json:"skills"`
 }
 
 type Skill struct {
@@ -125,21 +125,21 @@ func (s *QuestionBank) Create(ctx context.Context, q *SQBQuestion) error {
 	return err
 }
 
-func (s *QuestionBank) GetCollectionDetail(ctx context.Context) ([]*CollectionDetail, error) {
+func (s *QuestionBank) GetCollectionDetail(ctx context.Context) ([]CollectionDetail, error) {
 	rows, err := s.queries.GetCollectionDetails(ctx)
 
 	if err != nil {
 		return nil, err
 	}
 
-	collectionMap := make(map[string]*CollectionDetail)
+	collectionMap := make(map[string]CollectionDetail)
 	for _, row := range rows {
 		details, ok := collectionMap[row.Domain]
 		if !ok {
-			collectionMap[row.Domain] = &CollectionDetail{
+			collectionMap[row.Domain] = CollectionDetail{
 				Quantity: int(row.Count),
 				Domain:   row.Domain,
-				Skills: []*Skill{
+				Skills: []Skill{
 					{
 						Text:     row.Skill.String,
 						Quantity: int(row.Count),
@@ -149,10 +149,10 @@ func (s *QuestionBank) GetCollectionDetail(ctx context.Context) ([]*CollectionDe
 			continue
 		}
 		details.Quantity += int(row.Count)
-		details.Skills = append(details.Skills, &Skill{Text: row.Skill.String, Quantity: int(row.Count)})
+		details.Skills = append(details.Skills, Skill{Text: row.Skill.String, Quantity: int(row.Count)})
 	}
 
-	result := make([]*CollectionDetail, len(collectionMap))
+	result := make([]CollectionDetail, len(collectionMap))
 
 	i := 0
 

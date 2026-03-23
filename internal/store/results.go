@@ -31,7 +31,7 @@ type Result struct {
 	MathScore    int32
 	EnglishScore int32
 	Feedback     []byte
-	Answers      []*ResultAnswer
+	Answers      []ResultAnswer
 }
 
 type ResultStore struct {
@@ -63,7 +63,7 @@ func (s *ResultStore) Create(ctx context.Context, result *Result) error {
 	return nil
 }
 
-func (s *ResultStore) GetByUserID(ctx context.Context, userId string) ([]*ResultPreview, error) {
+func (s *ResultStore) GetByUserID(ctx context.Context, userId string) ([]ResultPreview, error) {
 	validUserID, _ := uuid.Parse(userId)
 
 	resultRows, err := s.queries.GetByUserID(ctx, pgtype.UUID{Bytes: validUserID, Valid: true})
@@ -71,15 +71,15 @@ func (s *ResultStore) GetByUserID(ctx context.Context, userId string) ([]*Result
 	if err != nil {
 		switch err {
 		case pgx.ErrNoRows:
-			return []*ResultPreview{}, nil
+			return []ResultPreview{}, nil
 		default:
 			return nil, err
 		}
 	}
 
-	var results []*ResultPreview
+	var results []ResultPreview
 	for _, r := range resultRows {
-		results = append(results, &ResultPreview{
+		results = append(results, ResultPreview{
 			EnglishScore: r.EnglishScore.Int32,
 			MathScore:    r.MathScore.Int32,
 			Total:        r.TotalScore.Int32,
@@ -136,19 +136,19 @@ func (s *ResultStore) Delete(ctx context.Context, userID string, id int32) error
 	return nil
 }
 
-func (s *ResultStore) GetAll(ctx context.Context) ([]*ResultPreview, error) {
+func (s *ResultStore) GetAll(ctx context.Context) ([]ResultPreview, error) {
 	resultRows, err := s.queries.GetAll(ctx)
 	if err != nil {
 		switch err {
 		case pgx.ErrNoRows:
-			return []*ResultPreview{}, nil
+			return []ResultPreview{}, nil
 		default:
 			return nil, err
 		}
 	}
-	var results []*ResultPreview
+	var results []ResultPreview
 	for _, r := range resultRows {
-		results = append(results, &ResultPreview{
+		results = append(results, ResultPreview{
 			EnglishScore: r.EnglishScore.Int32,
 			MathScore:    r.MathScore.Int32,
 			Total:        r.TotalScore.Int32,

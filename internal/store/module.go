@@ -47,7 +47,7 @@ func (s *ModuleStore) GetByNameAndPracticeID(ctx context.Context, name string, p
 	}, nil
 }
 
-func (s *ModuleStore) GetAllByPracticeID(ctx context.Context, practiceID int32) ([]*Module, error) {
+func (s *ModuleStore) GetAllByPracticeID(ctx context.Context, practiceID int32) ([]Module, error) {
 	dbModules, err := s.queries.GetByPracticeId(ctx, practiceID)
 	if err != nil {
 		switch err {
@@ -57,9 +57,9 @@ func (s *ModuleStore) GetAllByPracticeID(ctx context.Context, practiceID int32) 
 			return nil, err
 		}
 	}
-	var modules []*Module
+	var modules []Module
 	for _, m := range dbModules {
-		modules = append(modules, &Module{
+		modules = append(modules, Module{
 			PracticeID: m.PracticeID,
 			ID:         m.ID,
 			Name:       m.Name,
