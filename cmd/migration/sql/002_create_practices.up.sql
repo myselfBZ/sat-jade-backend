@@ -32,22 +32,22 @@ CREATE TABLE IF NOT EXISTS answer_choice (
 );
 
 
-CREATE TABLE IF NOT EXISTS test_session (
+CREATE TABLE IF NOT EXISTS results (
     id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     practice_id INT NOT NULL REFERENCES practice(id) ON DELETE CASCADE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    ai_feedback JSONB,
     english_score INT,
     math_score INT,
     total_score INT
 );
 
-CREATE TABLE IF NOT EXISTS test_session_answers (
+
+
+CREATE TABLE IF NOT EXISTS result_answers (
     id SERIAL PRIMARY KEY,
-    user_answer CHAR(1),
-    session_id INT NOT NULL REFERENCES test_session(id) ON DELETE CASCADE,
-    correct_answer VARCHAR(10) NOT NULL,
-    module VARCHAR(50) NOT NULL,
+    result_id INT NOT NULL REFERENCES results(id) ON DELETE CASCADE,
+    question_id INT NOT NULL REFERENCES question(id),
+    answer_id INT REFERENCES answer_choice(id),
     status VARCHAR(10) NOT NULL DEFAULT 'omitted' CHECK (status IN ('correct', 'incorrect', 'omitted'))
 );
