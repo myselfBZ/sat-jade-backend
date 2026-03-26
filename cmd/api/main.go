@@ -51,7 +51,7 @@ func loadEnvVars() {
 		fmt.Printf("expected int for TOKEN_EXPR_HOURS GOT %s\n", tokenExpr)
 	}
 
-	FRONT_END := os.Getenv("FRONTEND_URL")
+	FRONT_END = os.Getenv("FRONTEND_URL")
 
 	if FRONT_END == "" {
 		panic("no FRONTEND_URL")

@@ -104,43 +104,21 @@ func (a *api) getAllResultsHandler(c echo.Context) error {
 }
 
 func (a *api) getResultByIDHandler(c echo.Context) error {
-	resultID := c.Param("id")
-	validResultID, err := strconv.Atoi(resultID)
-	if err != nil {
-		a.badRequestLog(c.Request().Method, c.Path(), err)
-		return echo.NewHTTPError(http.StatusUnprocessableEntity)
-	}
-	user, err := a.getUserFromContext(c)
+	result, ok := c.Get(resultCtxKey).(*store.Result)
 
-	if err != nil {
-		a.unauthorizedLog(c.Request().Method, c.Path(), err)
-		return err
+	if !ok {
+		a.internalErrLog(c.Request().Method, c.Path(), errors.New("result not set in the context"))
+		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	session, err := a.storage.Results.GetById(c.Request().Context(), int32(validResultID))
-	if err != nil {
-		switch err {
-		case store.ErrRecordNotFound:
-			a.notFoundLog(c.Request().Method, c.Path(), err)
-			return echo.NewHTTPError(http.StatusNotFound)
-		default:
-			a.internalErrLog(c.Request().Method, c.Path(), err)
-			return echo.NewHTTPError(http.StatusInternalServerError)
-		}
-	}
 
-	if session.UserId != user.ID {
-		a.unauthorizedLog(c.Request().Method, c.Path(), errors.New("ownership didnt match"))
-		return echo.NewHTTPError(http.StatusUnauthorized, "you are not allowed to see this result")
-	}
-
-	answers, err := a.storage.ResultAnswers.GetByResultID(c.Request().Context(), session.ID)
+	answers, err := a.storage.ResultAnswers.GetByResultID(c.Request().Context(), result.ID)
 	if err != nil {
 		a.internalErrLog(c.Request().Method, c.Path(), err)
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 	// attach question data. must do
-	practice, err := a.storage.Practices.GetFullTest(c.Request().Context(), session.PracticeId)
+	practice, err := a.storage.Practices.GetFullTest(c.Request().Context(), result.PracticeId)
 
 	if err != nil {
 		switch err {
