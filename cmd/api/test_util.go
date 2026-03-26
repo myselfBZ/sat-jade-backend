@@ -54,7 +54,7 @@ func newTestApi() *api {
 		},
 	}
 
-	logger := zap.Must(zap.NewProduction(zap.AddCaller())).Sugar()
+	logger := zap.NewNop().Sugar()
 	defer logger.Sync()
 	api.logger = logger
 
