@@ -20,6 +20,7 @@ var SERVER_ADDR string
 var DB string
 var SECRET_KEY string
 var TOKEN_EXPR_HOURS int
+var FRONT_END string
 
 func loadEnvVars() {
 	GEMINI_API_KEY = os.Getenv("GEMINI_API_KEY")
@@ -49,6 +50,12 @@ func loadEnvVars() {
 	if err != nil {
 		fmt.Printf("expected int for TOKEN_EXPR_HOURS GOT %s\n", tokenExpr)
 	}
+
+	FRONT_END := os.Getenv("FRONTEND_URL")
+
+	if FRONT_END == "" {
+		panic("no FRONTEND_URL")
+	}
 }
 
 func main() {
@@ -57,6 +64,7 @@ func main() {
 	api := api{
 		config: config{
 			addr: ":" + SERVER_ADDR,
+			frontEndUrl: FRONT_END,
 			auth: authConfig{
 				secret: SECRET_KEY,
 				exp:    time.Hour * time.Duration(TOKEN_EXPR_HOURS),

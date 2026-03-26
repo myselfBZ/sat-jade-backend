@@ -13,7 +13,7 @@ var (
 	ErrRecordNotFound    = errors.New("record not found")
 	ErrDuplicateEmail    = errors.New("this email is already taken")
 	ErrForeignConstraint = errors.New("foreign key constraint violated")
-
+	ErrConflict 		 = errors.New("conflict request")
 	ErrInvalidUUID = errors.New("invalid uuid")
 )
 
@@ -46,8 +46,7 @@ type Storage struct {
 
 	Questions interface {
 		CreateWithAnswerChoices(ctx context.Context, moduleID int32, q *Question) error
-		GetByModuleID(ctx context.Context, moduleID int32) ([]Question, error)
-		GetByModuleWithChoices(ctx context.Context, moduleID int32) ([]Question, error)
+
 	}
 
 	AnswerChoiceStorage interface {

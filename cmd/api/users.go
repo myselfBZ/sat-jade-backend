@@ -16,6 +16,17 @@ func (a *api) getUserFromContext(c echo.Context) (*store.User, error) {
 	return user, nil
 }
 
+func (a *api) getUserSelfHandler(c echo.Context) error {
+	user, err := a.getUserFromContext(c)
+
+	if err != nil {
+		a.unauthorizedLog(c.Request().Method, c.Path(), err)
+		return err
+	}
+
+	return c.JSON(http.StatusOK, user)
+}
+
 func (a *api) getUsersHandler(c echo.Context) error {
 	users, err := a.storage.Users.GetMany(c.Request().Context())
 	if err != nil {
@@ -28,11 +39,15 @@ func (a *api) getUsersHandler(c echo.Context) error {
 func (a *api) deleteUserHandler(c echo.Context) error {
 	userId := c.Param("id")
 	if err := a.storage.Users.Delete(c.Request().Context(), userId); err != nil {
-		a.badRequestLog(c.Request().Method, c.Path(), err)
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid id")
+		switch err {
+		case store.ErrRecordNotFound:
+			a.notFoundLog(c.Request().Method, c.Path(), err)
+			return echo.NewHTTPError(http.StatusNotFound, "user not found")
+		default:
+			a.badRequestLog(c.Request().Method, c.Path(), err)
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid id")
+		}
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"Success":"ok",
-	})
+	return c.JSON(http.StatusNoContent, nil)
 }

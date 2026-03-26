@@ -1,8 +1,6 @@
 package main
 
 import (
-	"net/http"
-	"os"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -22,6 +20,7 @@ type authConfig struct {
 type config struct {
 	addr string
 	auth authConfig
+	frontEndUrl string
 }
 
 type api struct {
@@ -34,14 +33,10 @@ type api struct {
 }
 
 func (a *api) registerRoutes() *echo.Echo {
-	frontEndUrl := os.Getenv("FRONTEND_URL")
-	if frontEndUrl == "" {
-		panic("no FRONTEND_URL")
-	}
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{frontEndUrl, "http://localhost:5174"},
+		AllowOrigins: []string{a.config.frontEndUrl, "http://localhost:5174"},
 		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
 		AllowHeaders: []string{
 			echo.HeaderOrigin,
@@ -57,39 +52,36 @@ func (a *api) registerRoutes() *echo.Echo {
 	results := v1.Group("/results", a.AuthMiddleware)
 	auth := v1.Group("/auth")
 
-	usersRouter.GET("/self", func(c echo.Context) error {
-		user := c.Get("user").(*store.User)
-		return c.JSON(http.StatusOK, user)
-	})
+	usersRouter.GET("/self", a.getUserSelfHandler)
 
-	usersRouter.GET("/", a.getUsersHandler, a.isAdmin)
-	usersRouter.DELETE("/:id", a.deleteUserHandler, a.isAdmin)
+	usersRouter.GET("/", a.getUsersHandler, a.CheckAdminMiddleware)
+	usersRouter.DELETE("/:id", a.deleteUserHandler, a.CheckAdminMiddleware)
 
 	usersResults := usersRouter.Group("/results")
 	usersResults.POST("/", a.createResultHandler)
 	usersResults.GET("/", a.getUserResultsHandler)
 	usersResults.GET("/:userId", a.getAllResultsByUserHandler)
 
-	results.GET("/", a.getAllResultsHandler, a.isAdmin)
+	results.GET("/", a.getAllResultsHandler, a.CheckAdminMiddleware)
 	results.GET("/:id", a.getResultByIDHandler)
 	results.DELETE("/:id", a.deleteResultByIDHandler)
 	results.POST("/:id/feedback", a.getOrCreateAIFeedbackHandler)
 
 
-	practices.POST("/", a.createPracticeHandler, a.isAdmin)
-	practices.DELETE("/:id", a.deletePracticeHandler, a.isAdmin)
+	practices.POST("/", a.createPracticeHandler, a.CheckAdminMiddleware)
+	practices.DELETE("/:id", a.deletePracticeHandler, a.CheckAdminMiddleware)
 	practices.GET("/:id", a.getPracticeByIDHandler)
 	practices.GET("/", a.getPracticePreviewsHandler)
 
 	questions := practices.Group("/questions")
 	// update method is a must
-	questions.POST("/", a.createQuestionHandler, a.isAdmin)
+	questions.POST("/", a.createQuestionHandler, a.CheckAdminMiddleware)
 	// needs to be updated
 	auth.POST("/token", a.createTokenHandler)
 	auth.POST("/users", a.createUserHandler)
 
 	questionBank := v1.Group("/question-bank", a.AuthMiddleware)
-	questionBank.POST("/", a.createSqbQuestion, a.isAdmin)
+	questionBank.POST("/", a.createSqbQuestion, a.CheckAdminMiddleware)
 	questionBank.GET("/", a.getCollectionDetails)
 	questionBank.GET("/:id", a.getQuestionByID)
 	questionBank.GET("/ids/:skill", a.getQuestionIdsBySkil)

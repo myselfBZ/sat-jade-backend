@@ -124,6 +124,5 @@ func (a *api) createUserHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	return c.JSON(http.StatusOK, &tokenEnvelope{Token: token})
-
+	return c.JSON(http.StatusCreated, &tokenEnvelope{Token: token})
 }

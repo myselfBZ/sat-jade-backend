@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"strings"
 
@@ -9,6 +8,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/myselfBZ/sat-jade/internal/store"
 )
+
+const userCtxKey = "user"
 
 func (app *api) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -41,17 +42,16 @@ func (app *api) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		user, err := app.storage.Users.GetByID(c.Request().Context(), userID)
 		if err != nil {
-			log.Println("Error fetching user: ", err)
 			return echo.NewHTTPError(http.StatusUnauthorized, "user not found")
 		}
 
-		c.Set("user", user)
+		c.Set(userCtxKey, user)
 
 		return next(c)
 	}
 }
 
-func (a *api) isAdmin(next echo.HandlerFunc) echo.HandlerFunc {
+func (a *api) CheckAdminMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		user, err := a.getUserFromContext(c)
 		if err != nil {
