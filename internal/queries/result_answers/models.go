@@ -2,29 +2,25 @@
 // versions:
 //   sqlc v1.30.0
 
-package results_answers
+package result_answers
 
 import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type AiFeedback struct {
+	ID        pgtype.UUID
+	ResultID  int32
+	UserID    pgtype.UUID
+	Content   string
+	CreatedAt pgtype.Timestamp
+}
 
 type AnswerChoice struct {
 	ID         int32
 	QuestionID int32
 	Label      string
 	Text       string
-}
-
-type DailyQuestion struct {
-	ID          int32
-	Domain      string
-	Paragraph   string
-	Correct     string
-	Svg         pgtype.Text
-	Prompt      string
-	Explanation string
-	Difficulty  string
-	CreatedAt   pgtype.Timestamp
 }
 
 type Module struct {
@@ -80,24 +76,22 @@ type QuestionBankAnswer struct {
 	ResponseDuration pgtype.Int4
 }
 
-type TestSession struct {
+type Result struct {
 	ID           int32
 	UserID       pgtype.UUID
 	PracticeID   int32
 	CreatedAt    pgtype.Timestamp
-	AiFeedback   []byte
 	EnglishScore pgtype.Int4
 	MathScore    pgtype.Int4
 	TotalScore   pgtype.Int4
 }
 
-type TestSessionAnswer struct {
-	ID            int32
-	UserAnswer    pgtype.Text
-	SessionID     int32
-	CorrectAnswer string
-	Module        string
-	Status        string
+type ResultAnswer struct {
+	ID         int32
+	ResultID   int32
+	QuestionID int32
+	AnswerID   pgtype.Int4
+	Status     string
 }
 
 type User struct {

@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"strings"
 	"sync"
 
 	"github.com/google/uuid"
@@ -178,17 +177,9 @@ func (m *PracticeMockStore) GetAllPreview(ctx context.Context) ([]PracticePrevie
 	return previews, nil
 }
 
-func (m *PracticeMockStore) GetCorrectAnswers(ctx context.Context, id int32) ([]string, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
 
-	_, exists := m.practices[id]
-	if !exists {
-		return nil, ErrRecordNotFound
-	}
-
-	// 98 As
-	return strings.Split(strings.Repeat("A ", 98), " "), nil
+func (s *PracticeMockStore) GetCorrectAnswersWithAnswerChoices(ctx context.Context, id int32) ([]CorrectAnswerWithAnswerChoices, error) {
+	return nil, nil
 }
 
 func (m *PracticeMockStore) Delete(ctx context.Context, id int32) error {

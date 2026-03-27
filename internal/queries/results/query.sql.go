@@ -12,13 +12,14 @@ import (
 )
 
 const create = `-- name: Create :one
-INSERT INTO test_session(
+INSERT INTO results (
     practice_id, 
     user_id, 
     english_score, 
     math_score, 
     total_score
-    ) VALUES($1, $2, $3, $4, $5) RETURNING id, user_id, practice_id, created_at, ai_feedback, english_score, math_score, total_score
+) VALUES ($1, $2, $3, $4, $5) 
+RETURNING id, user_id, practice_id, created_at, english_score, math_score, total_score
 `
 
 type CreateParams struct {
@@ -29,7 +30,7 @@ type CreateParams struct {
 	TotalScore   pgtype.Int4
 }
 
-func (q *Queries) Create(ctx context.Context, arg CreateParams) (TestSession, error) {
+func (q *Queries) Create(ctx context.Context, arg CreateParams) (Result, error) {
 	row := q.db.QueryRow(ctx, create,
 		arg.PracticeID,
 		arg.UserID,
@@ -37,13 +38,12 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) (TestSession, er
 		arg.MathScore,
 		arg.TotalScore,
 	)
-	var i TestSession
+	var i Result
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		&i.PracticeID,
 		&i.CreatedAt,
-		&i.AiFeedback,
 		&i.EnglishScore,
 		&i.MathScore,
 		&i.TotalScore,
@@ -51,24 +51,25 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) (TestSession, er
 	return i, err
 }
 
-const deleteById = `-- name: DeleteById :one
-DELETE FROM test_session WHERE id = $1 AND user_id = $2 RETURNING id, user_id, practice_id, created_at, ai_feedback, english_score, math_score, total_score
+const delete = `-- name: Delete :one
+DELETE FROM results 
+WHERE id = $1 AND user_id = $2 
+RETURNING id, user_id, practice_id, created_at, english_score, math_score, total_score
 `
 
-type DeleteByIdParams struct {
+type DeleteParams struct {
 	ID     int32
 	UserID pgtype.UUID
 }
 
-func (q *Queries) DeleteById(ctx context.Context, arg DeleteByIdParams) (TestSession, error) {
-	row := q.db.QueryRow(ctx, deleteById, arg.ID, arg.UserID)
-	var i TestSession
+func (q *Queries) Delete(ctx context.Context, arg DeleteParams) (Result, error) {
+	row := q.db.QueryRow(ctx, delete, arg.ID, arg.UserID)
+	var i Result
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		&i.PracticeID,
 		&i.CreatedAt,
-		&i.AiFeedback,
 		&i.EnglishScore,
 		&i.MathScore,
 		&i.TotalScore,
@@ -77,24 +78,32 @@ func (q *Queries) DeleteById(ctx context.Context, arg DeleteByIdParams) (TestSes
 }
 
 const getAll = `-- name: GetAll :many
-SELECT id, user_id, practice_id, created_at, ai_feedback, english_score, math_score, total_score from test_session
+SELECT 
+    id, 
+    user_id, 
+    practice_id, 
+    created_at, 
+    english_score, 
+    math_score, 
+    total_score 
+FROM results
+ORDER BY created_at DESC
 `
 
-func (q *Queries) GetAll(ctx context.Context) ([]TestSession, error) {
+func (q *Queries) GetAll(ctx context.Context) ([]Result, error) {
 	rows, err := q.db.Query(ctx, getAll)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []TestSession
+	var items []Result
 	for rows.Next() {
-		var i TestSession
+		var i Result
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
 			&i.PracticeID,
 			&i.CreatedAt,
-			&i.AiFeedback,
 			&i.EnglishScore,
 			&i.MathScore,
 			&i.TotalScore,
@@ -110,18 +119,26 @@ func (q *Queries) GetAll(ctx context.Context) ([]TestSession, error) {
 }
 
 const getByID = `-- name: GetByID :one
-SELECT id, user_id, practice_id, created_at, ai_feedback, english_score, math_score, total_score FROM test_session WHERE id = $1
+SELECT 
+    id, 
+    user_id, 
+    practice_id, 
+    created_at, 
+    english_score, 
+    math_score, 
+    total_score 
+FROM results 
+WHERE id = $1
 `
 
-func (q *Queries) GetByID(ctx context.Context, id int32) (TestSession, error) {
+func (q *Queries) GetByID(ctx context.Context, id int32) (Result, error) {
 	row := q.db.QueryRow(ctx, getByID, id)
-	var i TestSession
+	var i Result
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		&i.PracticeID,
 		&i.CreatedAt,
-		&i.AiFeedback,
 		&i.EnglishScore,
 		&i.MathScore,
 		&i.TotalScore,
@@ -131,20 +148,20 @@ func (q *Queries) GetByID(ctx context.Context, id int32) (TestSession, error) {
 
 const getByUserID = `-- name: GetByUserID :many
 SELECT 
-    ts.id,
+    r.id,
     p.title AS practice_title,
-    COUNT(CASE WHEN tsa.status = 'correct' THEN 1 END) AS correct_answers,
-    COUNT(tsa.id) AS total_questions,
-    ts.created_at,
-    ts.english_score,
-    ts.math_score,
-    ts.total_score
-FROM test_session ts
-JOIN practice p ON ts.practice_id = p.id
-LEFT JOIN test_session_answers tsa ON ts.id = tsa.session_id
-WHERE ts.user_id = $1
-GROUP BY ts.id, p.title, ts.created_at
-ORDER BY ts.created_at DESC
+    COUNT(CASE WHEN ra.status = 'correct' THEN 1 END) AS correct_answers,
+    COUNT(ra.id) AS total_questions,
+    r.created_at,
+    r.english_score,
+    r.math_score,
+    r.total_score
+FROM results r
+JOIN practice p ON r.practice_id = p.id
+LEFT JOIN result_answers ra ON r.id = ra.result_id
+WHERE r.user_id = $1
+GROUP BY r.id, p.title, r.created_at
+ORDER BY r.created_at DESC
 `
 
 type GetByUserIDRow struct {

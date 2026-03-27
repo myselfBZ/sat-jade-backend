@@ -8,23 +8,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AiFeedback struct {
+	ID        pgtype.UUID      `json:"id"`
+	ResultID  int32            `json:"result_id"`
+	UserID    pgtype.UUID      `json:"user_id"`
+	Content   string           `json:"content"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+}
+
 type AnswerChoice struct {
 	ID         int32  `json:"id"`
 	QuestionID int32  `json:"question_id"`
 	Label      string `json:"label"`
 	Text       string `json:"text"`
-}
-
-type DailyQuestion struct {
-	ID          int32            `json:"id"`
-	Domain      string           `json:"domain"`
-	Paragraph   string           `json:"paragraph"`
-	Correct     string           `json:"correct"`
-	Svg         pgtype.Text      `json:"svg"`
-	Prompt      string           `json:"prompt"`
-	Explanation string           `json:"explanation"`
-	Difficulty  string           `json:"difficulty"`
-	CreatedAt   pgtype.Timestamp `json:"created_at"`
 }
 
 type Module struct {
@@ -80,24 +76,22 @@ type QuestionBankAnswer struct {
 	ResponseDuration pgtype.Int4        `json:"response_duration"`
 }
 
-type TestSession struct {
+type Result struct {
 	ID           int32            `json:"id"`
 	UserID       pgtype.UUID      `json:"user_id"`
 	PracticeID   int32            `json:"practice_id"`
 	CreatedAt    pgtype.Timestamp `json:"created_at"`
-	AiFeedback   []byte           `json:"ai_feedback"`
 	EnglishScore pgtype.Int4      `json:"english_score"`
 	MathScore    pgtype.Int4      `json:"math_score"`
 	TotalScore   pgtype.Int4      `json:"total_score"`
 }
 
-type TestSessionAnswer struct {
-	ID            int32       `json:"id"`
-	UserAnswer    pgtype.Text `json:"user_answer"`
-	SessionID     int32       `json:"session_id"`
-	CorrectAnswer string      `json:"correct_answer"`
-	Module        string      `json:"module"`
-	Status        string      `json:"status"`
+type ResultAnswer struct {
+	ID         int32       `json:"id"`
+	ResultID   int32       `json:"result_id"`
+	QuestionID int32       `json:"question_id"`
+	AnswerID   pgtype.Int4 `json:"answer_id"`
+	Status     string      `json:"status"`
 }
 
 type User struct {

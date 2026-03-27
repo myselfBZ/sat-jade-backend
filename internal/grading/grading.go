@@ -46,43 +46,28 @@ func Score(rawCorrectRW, rawCorrectMath int) (int, int, int) {
 }
 
 
-// this function HAS to be guaranteed to recieve an intiger between 0 and 97
-func getModuleNameFromIdx(responseIdx int) string {
-	if responseIdx < 27 {
-		return  "Reading And Writing 1"
+func getChoiceIDByLabel(choices []store.AnswerChoice, label string) *int32 {
+	for i := 0; i < len(choices); i++ {
+		if choices[i].Label == label {
+			return &choices[i].ID
+		}
 	}
-
-	if responseIdx < 54 && responseIdx > 26 {
-		return "Reading And Writing 2"
-	}
-
-
-	if responseIdx < 76 && responseIdx > 53 {
-		return "Math 1"
-	}
-
-	if responseIdx < 98 && responseIdx > 75 {
-		return "Math 1"
-	}
-
-	return ""
+	return nil
 }
 
-
-func Check(studentResponse []string, correctAnswers []string) *store.Result {
+func Check(studentResponse []string, correctAnswers []store.CorrectAnswerWithAnswerChoices) *store.Result {
 	var result store.Result
 	var answers []store.ResultAnswer
 
 	rwCorrect := 0
 	mathCorrect := 0
-	for i, correct := range correctAnswers {
+	for i := 0; i < len(studentResponse); i++ {
 		answer := store.ResultAnswer{
-			UserAnswer:    studentResponse[i],
-			CorrectAnswer: correct,
-			Module:        getModuleNameFromIdx(i),
+			UserAnswerId: getChoiceIDByLabel(correctAnswers[i].AnswerChoices, studentResponse[i]),
+			QuestionId: correctAnswers[i].QuestionID,
 		}
 
-		if correct == studentResponse[i] {
+		if correctAnswers[i].CorrectAnswer == studentResponse[i] {
 			answer.Status = "correct"
 			// counting correct answers by domain on the fly
 			if i < 54 {

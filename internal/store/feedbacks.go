@@ -21,11 +21,11 @@ func NewFeedBackStore(db *pgxpool.Pool) *FeedbackStore {
 	}
 }
 
-func (s *FeedbackStore) Create(ctx context.Context, userID uuid.UUID, resultID int32, feedback []byte) error {
-	_, err := s.queries.CreateAIFeedback(ctx, feedbacks.CreateAIFeedbackParams{
+func (s *FeedbackStore) Create(ctx context.Context, userID uuid.UUID, resultID int32, feedback string) error {
+	_, err := s.queries.Create(ctx, feedbacks.CreateParams{
 		UserID:  pgtype.UUID{Bytes: userID, Valid: true},
-		ID:      resultID,
-		Column1: feedback,
+		ResultID: resultID,
+		Content: feedback,
 	})
 
 	if err != nil {

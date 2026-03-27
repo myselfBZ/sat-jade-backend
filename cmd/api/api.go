@@ -65,7 +65,7 @@ func (a *api) registerRoutes() *echo.Echo {
 	results.GET("/", a.getAllResultsHandler, a.CheckAdminMiddleware)
 	results.GET("/:id", a.getResultByIDHandler, a.CheckResultOwnership)
 	results.DELETE("/:id", a.deleteResultByIDHandler)
-	results.POST("/:id/feedback", a.getOrCreateAIFeedbackHandler)
+	// results.POST("/:id/feedback", a.getOrCreateAIFeedbackHandler)
 
 
 	practices.POST("/", a.createPracticeHandler, a.CheckAdminMiddleware)

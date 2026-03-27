@@ -29,7 +29,7 @@ func (a *api) createResultHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	correctAnswers, err := a.storage.Practices.GetCorrectAnswers(c.Request().Context(), p.ExamID)
+	correctAnswersWithChoices, err := a.storage.Practices.GetCorrectAnswersWithAnswerChoices(c.Request().Context(), p.ExamID)
 	if err != nil {
 		switch err {
 		case store.ErrRecordNotFound:
@@ -41,7 +41,7 @@ func (a *api) createResultHandler(c echo.Context) error {
 		}
 	}
 
-	result := grading.Check(p.Answers, correctAnswers)
+	result := grading.Check(p.Answers, correctAnswersWithChoices)
 	result.UserId = user.ID
 	result.PracticeId = p.ExamID
 
@@ -111,49 +111,13 @@ func (a *api) getResultByIDHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-
 	answers, err := a.storage.ResultAnswers.GetByResultID(c.Request().Context(), result.ID)
 	if err != nil {
 		a.internalErrLog(c.Request().Method, c.Path(), err)
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
-	// attach question data. must do
-	practice, err := a.storage.Practices.GetFullTest(c.Request().Context(), result.PracticeId)
-
-	if err != nil {
-		switch err {
-		case store.ErrRecordNotFound:
-			a.notFoundLog(c.Request().Method, c.Path(), err)
-			return echo.NewHTTPError(http.StatusNotFound)
-		default:
-			a.internalErrLog(c.Request().Method, c.Path(), err)
-			return echo.NewHTTPError(http.StatusInternalServerError)
-		}
-	}
-
-	var questions []*store.Question
-
-	for _, m := range practice.Modules {
-		questions = append(questions, m.Questions...)
-	}
-	questionsIndex := 0
-	for _, q := range questions {
-		answers[questionsIndex].Passage = q.Paragraph
-		answers[questionsIndex].Question = q.Prompt
-		answers[questionsIndex].Number = q.Number
-		answers[questionsIndex].ChoiceA = q.AnswerChoices[0].Text
-		if len(q.AnswerChoices) == 4 {
-			answers[questionsIndex].ChoiceB = q.AnswerChoices[1].Text
-			answers[questionsIndex].ChoiceC = q.AnswerChoices[2].Text
-			answers[questionsIndex].ChoiceD = q.AnswerChoices[3].Text
-		}
-		answers[questionsIndex].Explanation = q.Explanation
-
-		questionsIndex += 1
-	}
 
 	return c.JSON(http.StatusOK, answers)
-
 }
 
 func (a *api) deleteResultByIDHandler(c echo.Context) error {

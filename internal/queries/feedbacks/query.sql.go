@@ -11,28 +11,32 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createAIFeedback = `-- name: CreateAIFeedback :one
-UPDATE test_session SET ai_feedback = $1::JSONB WHERE id = $2 AND user_id = $3 RETURNING id, user_id, practice_id, created_at, ai_feedback, english_score, math_score, total_score
+const create = `-- name: Create :one
+INSERT INTO ai_feedbacks (
+    result_id, 
+    user_id, 
+    content
+) VALUES (
+    $1, $2, $3
+) 
+RETURNING id, result_id, user_id, content, created_at
 `
 
-type CreateAIFeedbackParams struct {
-	Column1 []byte
-	ID      int32
-	UserID  pgtype.UUID
+type CreateParams struct {
+	ResultID int32
+	UserID   pgtype.UUID
+	Content  string
 }
 
-func (q *Queries) CreateAIFeedback(ctx context.Context, arg CreateAIFeedbackParams) (TestSession, error) {
-	row := q.db.QueryRow(ctx, createAIFeedback, arg.Column1, arg.ID, arg.UserID)
-	var i TestSession
+func (q *Queries) Create(ctx context.Context, arg CreateParams) (AiFeedback, error) {
+	row := q.db.QueryRow(ctx, create, arg.ResultID, arg.UserID, arg.Content)
+	var i AiFeedback
 	err := row.Scan(
 		&i.ID,
+		&i.ResultID,
 		&i.UserID,
-		&i.PracticeID,
+		&i.Content,
 		&i.CreatedAt,
-		&i.AiFeedback,
-		&i.EnglishScore,
-		&i.MathScore,
-		&i.TotalScore,
 	)
 	return i, err
 }

@@ -18,71 +18,76 @@ var (
 )
 
 type Storage struct {
-	Users interface {
-		Create(ctx context.Context, u *User) error
-		GetByEmail(ctx context.Context, email string) (*User, error)
-		GetByID(ctx context.Context, id string) (*User, error)
-		GetMany(ctx context.Context) ([]User, error)
-		Delete(ctc context.Context, id string) error
-	}
+	Users         UserRepository
+	Practices     PracticeRepository
+	Modules       ModuleRepository
+	Questions     QuestionRepository
+	AnswerChoices AnswerChoiceRepository
+	Results       ResultRepository
+	ResultAnswers ResultAnswerRepository
+	Feedback      FeedbackRepository
+	QuestionBank  QuestionBankRepository
+	QBAnswers     QBAnswerRepository
+}
 
-	Practices interface {
-		Delete(ctx context.Context, id int32) error
+type UserRepository interface {
+	Create(ctx context.Context, u *User) error
+	GetByEmail(ctx context.Context, email string) (*User, error)
+	GetByID(ctx context.Context, id string) (*User, error)
+	GetMany(ctx context.Context) ([]User, error)
+	Delete(ctx context.Context, id string) error
+}
 
-		// Fetches the preview of practice tests
-		// If there is none, empty slice will be returned
-		// []*PracticePrview
-		GetAllPreview(ctx context.Context) ([]PracticePreview, error)
-		Create(ctx context.Context, title string) (int32, error)
-		GetFullTest(ctx context.Context, id int32) (*Practice, error) 
-		GetCorrectAnswers(ctx context.Context, id int32) ([]string, error)
-	}
+type PracticeRepository interface {
+	Delete(ctx context.Context, id int32) error
+	GetAllPreview(ctx context.Context) ([]PracticePreview, error)
+	Create(ctx context.Context, title string) (int32, error)
+	GetFullTest(ctx context.Context, id int32) (*Practice, error)
+	GetCorrectAnswersWithAnswerChoices(ctx context.Context, id int32) ([]CorrectAnswerWithAnswerChoices, error) 
+}
 
-	Modules interface {
-		GetAllByPracticeID(ctx context.Context, practiceID int32) ([]Module, error)
-		GetByID(ctx context.Context, id int32) (*Module, error)
-		GetByNameAndPracticeID(ctx context.Context, name string, practiceID int32) (*Module, error)
-	}
+type ModuleRepository interface {
+	GetAllByPracticeID(ctx context.Context, practiceID int32) ([]Module, error)
+	GetByID(ctx context.Context, id int32) (*Module, error)
+	GetByNameAndPracticeID(ctx context.Context, name string, practiceID int32) (*Module, error)
+}
 
-	Questions interface {
-		CreateWithAnswerChoices(ctx context.Context, moduleID int32, q *Question) error
+type QuestionRepository interface {
+	CreateWithAnswerChoices(ctx context.Context, moduleID int32, q *Question) error
+}
 
-	}
+type AnswerChoiceRepository interface {
+	GetByQuestionID(ctx context.Context, questID int32) ([]AnswerChoice, error)
+	UpdateAnswerChoice(ctx context.Context)
+}
 
-	AnswerChoiceStorage interface {
-		GetByQuestionID(ctx context.Context, questID int32) ([]AnswerChoice, error)
-		// Implementation TBD
-		UpdateAnswerChoice(ctx context.Context)
-	}
+type ResultRepository interface {
+	Create(ctx context.Context, result *Result) error
+	GetByUserID(ctx context.Context, userId string) ([]ResultPreview, error)
+	GetById(ctx context.Context, sessionId int32) (*Result, error)
+	Delete(ctx context.Context, userID string, id int32) error
+	GetAll(ctx context.Context) ([]ResultPreview, error)
+}
 
-	Results interface {
-		Create(ctx context.Context, result *Result) error
-		GetByUserID(ctx context.Context, userId string) ([]ResultPreview, error)
-		GetById(ctx context.Context, sessionId int32) (*Result, error)
-		Delete(ctx context.Context, userID string, id int32) error
-		GetAll(ctx context.Context) ([]ResultPreview, error)
-	}
+type ResultAnswerRepository interface {
+	CreateMany(ctx context.Context, resultID int32, answers []ResultAnswer) error
+	GetByResultID(ctx context.Context, resultID int32) ([]ResultAnswer, error)
+}
 
-	ResultAnswers interface {
-		CreateMany(ctx context.Context, resultID int32, answers []ResultAnswer) error
-		GetByResultID(ctx context.Context, resultID int32) ([]ResultAnswer, error)
-	}
+type FeedbackRepository interface {
+	Create(ctx context.Context, userID uuid.UUID, resultID int32, feedback string) error
+}
 
-	Feedback interface {
-		Create(ctx context.Context, userID uuid.UUID, resultID int32, feedback []byte) error
-	}
+type QuestionBankRepository interface {
+	GetIdBySkill(ctx context.Context, skill string) ([]int32, error)
+	Create(ctx context.Context, q *SQBQuestion) error
+	GetCollectionDetail(ctx context.Context) ([]CollectionDetail, error)
+	GetById(ctx context.Context, id int, userId string) (*SQBQuestion, error)
+}
 
-	QuestionBank interface {
-		GetIdBySkill(ctx context.Context, skill string) ([]int32, error)
-		Create(ctx context.Context, q *SQBQuestion) error
-		GetCollectionDetail(ctx context.Context) ([]CollectionDetail, error)
-		GetById(ctx context.Context, id int, userId string) (*SQBQuestion, error)
-	}
-
-	QBAnswers interface {
-		Create(ctx context.Context, a *qb_answers.CreateParams) error
-		GetByUser(ctx context.Context, userId string) ([]qb_answers.QuestionBankAnswer, error)
-	}
+type QBAnswerRepository interface {
+	Create(ctx context.Context, a *qb_answers.CreateParams) error
+	GetByUser(ctx context.Context, userId string) ([]qb_answers.QuestionBankAnswer, error)
 }
 
 func New(db *pgxpool.Pool) *Storage {
@@ -91,7 +96,7 @@ func New(db *pgxpool.Pool) *Storage {
 		Practices:           NewPracticeStore(db),
 		Modules:             NewModuleStore(db),
 		Questions:           NewQuestionStore(db),
-		AnswerChoiceStorage: NewAnswerChoiceStore(db),
+		AnswerChoices: NewAnswerChoiceStore(db),
 		Results:             NewResultStore(db),
 		ResultAnswers:       NewResultAnswersStore(db),
 		Feedback:            NewFeedBackStore(db),

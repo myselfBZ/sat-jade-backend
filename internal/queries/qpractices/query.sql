@@ -18,9 +18,19 @@ inserted_modules AS (
 SELECT * FROM new_practice;
 
 
--- name: GetCorrectAnswers :many
+-- name: GetCorrectAnswersWithChoices :many
 SELECT 
-    q.correct
+    q.id AS question_id,
+    q.correct AS correct_label,
+    -- Get all 4 choices for this question as a JSON array
+    (
+        SELECT json_agg(json_build_object(
+            'id', ac.id, 
+            'label', ac.label
+        ) ORDER BY ac.label)
+        FROM answer_choice ac 
+        WHERE ac.question_id = q.id
+    ) AS choices
 FROM module m
 JOIN question q ON q.section_id = m.id
 WHERE m.practice_id = $1

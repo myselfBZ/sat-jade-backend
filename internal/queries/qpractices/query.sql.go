@@ -66,28 +66,44 @@ func (q *Queries) Delete(ctx context.Context, id int32) (Practice, error) {
 	return i, err
 }
 
-const getCorrectAnswers = `-- name: GetCorrectAnswers :many
+const getCorrectAnswersWithChoices = `-- name: GetCorrectAnswersWithChoices :many
 SELECT 
-    q.correct
+    q.id AS question_id,
+    q.correct AS correct_label,
+    -- Get all 4 choices for this question as a JSON array
+    (
+        SELECT json_agg(json_build_object(
+            'id', ac.id, 
+            'label', ac.label
+        ) ORDER BY ac.label)
+        FROM answer_choice ac 
+        WHERE ac.question_id = q.id
+    ) AS choices
 FROM module m
 JOIN question q ON q.section_id = m.id
 WHERE m.practice_id = $1
 ORDER BY m.id, q.number
 `
 
-func (q *Queries) GetCorrectAnswers(ctx context.Context, practiceID int32) ([]string, error) {
-	rows, err := q.db.Query(ctx, getCorrectAnswers, practiceID)
+type GetCorrectAnswersWithChoicesRow struct {
+	QuestionID   int32
+	CorrectLabel string
+	Choices      []byte
+}
+
+func (q *Queries) GetCorrectAnswersWithChoices(ctx context.Context, practiceID int32) ([]GetCorrectAnswersWithChoicesRow, error) {
+	rows, err := q.db.Query(ctx, getCorrectAnswersWithChoices, practiceID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []string
+	var items []GetCorrectAnswersWithChoicesRow
 	for rows.Next() {
-		var correct string
-		if err := rows.Scan(&correct); err != nil {
+		var i GetCorrectAnswersWithChoicesRow
+		if err := rows.Scan(&i.QuestionID, &i.CorrectLabel, &i.Choices); err != nil {
 			return nil, err
 		}
-		items = append(items, correct)
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

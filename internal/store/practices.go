@@ -14,13 +14,19 @@ type Practice struct {
 	CreatedAt time.Time `json:"created_at"`
 	ID        int32     `json:"id"`
 	Title     string    `json:"title"`
-	Modules   []Module `json:"sections"`
+	Modules   []Module  `json:"sections"`
 }
 
 type PracticePreview struct {
 	CreatedAt time.Time `json:"created_at"`
 	ID        int32     `json:"id"`
 	Title     string    `json:"title"`
+}
+
+type CorrectAnswerWithAnswerChoices struct {
+	QuestionID    int32          `json:"question_id"`
+	CorrectAnswer string         `json:"correct_answer"`
+	AnswerChoices []AnswerChoice `json:"answer_choice"`
 }
 
 type PracticeStore struct {
@@ -33,7 +39,6 @@ func NewPracticeStore(db *pgxpool.Pool) *PracticeStore {
 		queries: queries,
 	}
 }
-
 
 func (s *PracticeStore) GetAllPreview(ctx context.Context) ([]PracticePreview, error) {
 	practicesDB, err := s.queries.GetPracticePreviews(ctx)
@@ -92,6 +97,25 @@ func (s *PracticeStore) GetFullTest(ctx context.Context, id int32) (*Practice, e
 	return &practice, nil
 }
 
-func (s *PracticeStore) GetCorrectAnswers(ctx context.Context, id int32) ([]string, error) {
-	return s.queries.GetCorrectAnswers(ctx, id)
+func (s *PracticeStore) GetCorrectAnswersWithAnswerChoices(ctx context.Context, id int32) ([]CorrectAnswerWithAnswerChoices, error) {
+	rows, err := s.queries.GetCorrectAnswersWithChoices(ctx, id)
+	if err != nil {
+		// TODO map it to the correct Domain error
+		return nil, err
+	}
+
+	data := make([]CorrectAnswerWithAnswerChoices, len(rows))
+	
+	for i := 0; i < len(rows); i++ {
+		data[i] = CorrectAnswerWithAnswerChoices{
+			QuestionID: rows[i].QuestionID,
+			CorrectAnswer: rows[i].CorrectLabel,
+		}
+
+		if err := json.Unmarshal(rows[i].Choices, &data[i].AnswerChoices); err != nil {
+			return nil, err
+		}
+	}
+
+	return data, nil
 }

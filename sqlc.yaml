@@ -65,8 +65,8 @@ sql:
     schema: "cmd/migration/sql"
     gen:
       go:
-        package: "results_answers"
-        out: "internal/queries/results_answers"
+        package: "result_answers"
+        out: "internal/queries/result_answers"
         sql_package: "pgx/v5"
 
   - name: feedbacks

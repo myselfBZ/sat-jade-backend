@@ -106,14 +106,13 @@ func (s *ResultStore) GetById(ctx context.Context, id int32) (*Result, error) {
 		UserId:     resultRow.UserID.String(),
 		PracticeId: resultRow.PracticeID,
 		CreatedAt:  resultRow.CreatedAt.Time,
-		Feedback:   resultRow.AiFeedback,
 	}, nil
 }
 
 func (s *ResultStore) Delete(ctx context.Context, userID string, id int32) error {
 	validUserID, _ := uuid.Parse(userID)
 
-	_, err := s.queries.DeleteById(ctx, results.DeleteByIdParams{
+	_, err := s.queries.Delete(ctx, results.DeleteParams{
 		UserID: pgtype.UUID{Bytes: validUserID, Valid: true},
 		ID:     id,
 	})

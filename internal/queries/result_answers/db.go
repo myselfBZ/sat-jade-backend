@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.30.0
 
-package results_answers
+package result_answers
 
 import (
 	"context"
