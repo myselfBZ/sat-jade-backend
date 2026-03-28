@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/myselfBZ/sat-jade/internal/queries/feedbacks"
 	"github.com/myselfBZ/sat-jade/internal/queries/qb_answers"
 )
 
@@ -67,6 +67,7 @@ type ResultRepository interface {
 	GetById(ctx context.Context, sessionId int32) (*Result, error)
 	Delete(ctx context.Context, userID string, id int32) error
 	GetAll(ctx context.Context) ([]ResultPreview, error)
+	GetOverview(ctx context.Context, id int32) (*ResultOverview, error)
 }
 
 type ResultAnswerRepository interface {
@@ -75,7 +76,8 @@ type ResultAnswerRepository interface {
 }
 
 type FeedbackRepository interface {
-	Create(ctx context.Context, userID uuid.UUID, resultID int32, feedback string) error
+	Create(ctx context.Context, params feedbacks.CreateParams) (*Feedback, error) 
+	Get(ctx context.Context, resultId int32) (*Feedback, error) 
 }
 
 type QuestionBankRepository interface {

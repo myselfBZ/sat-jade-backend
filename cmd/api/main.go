@@ -12,6 +12,7 @@ import (
 	"github.com/myselfBZ/sat-jade/internal/auth"
 	"github.com/myselfBZ/sat-jade/internal/db"
 	"github.com/myselfBZ/sat-jade/internal/llm"
+	"github.com/myselfBZ/sat-jade/internal/services/feedback"
 	"github.com/myselfBZ/sat-jade/internal/store"
 )
 
@@ -93,6 +94,7 @@ func main() {
 		api.config.auth.aud,
 	)
 	api.llm, err = llm.NewGemini(GEMINI_API_KEY)
+	api.feedbackService = feedback.New(api.storage.Feedback, api.llm)
 
 	if err != nil {
 		fmt.Println("error connecting to gemini")

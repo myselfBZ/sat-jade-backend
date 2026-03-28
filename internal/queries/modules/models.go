@@ -12,7 +12,9 @@ type AiFeedback struct {
 	ID        pgtype.UUID
 	ResultID  int32
 	UserID    pgtype.UUID
-	Content   string
+	Header    string
+	Body      string
+	Footer    string
 	CreatedAt pgtype.Timestamp
 }
 

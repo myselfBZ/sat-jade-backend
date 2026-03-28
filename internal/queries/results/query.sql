@@ -54,3 +54,18 @@ ORDER BY r.created_at DESC;
 DELETE FROM results 
 WHERE id = $1 AND user_id = $2 
 RETURNING *;
+
+
+-- name: GetOverview :many
+SELECT 
+    q.domain,
+    COUNT(*) FILTER (WHERE ra.status = 'correct')::int AS corrects,
+    COUNT(*) FILTER (WHERE ra.status != 'correct')::int AS mistakes
+FROM 
+    result_answers ra
+JOIN 
+    question q ON ra.question_id = q.id
+WHERE 
+    ra.result_id = $1
+GROUP BY 
+    q.domain;

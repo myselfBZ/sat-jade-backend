@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/myselfBZ/sat-jade/internal/auth"
 	"github.com/myselfBZ/sat-jade/internal/llm"
+	"github.com/myselfBZ/sat-jade/internal/services/feedback"
 	"github.com/myselfBZ/sat-jade/internal/store"
 	"go.uber.org/zap"
 )
@@ -27,7 +28,7 @@ type api struct {
 	config config
 	logger *zap.SugaredLogger
 	llm    llm.LLM
-	// New
+	feedbackService feedback.Service
 	auth    auth.Authenticator
 	storage *store.Storage
 }
@@ -65,7 +66,7 @@ func (a *api) registerRoutes() *echo.Echo {
 	results.GET("/", a.getAllResultsHandler, a.CheckAdminMiddleware)
 	results.GET("/:id", a.getResultByIDHandler, a.CheckResultOwnership)
 	results.DELETE("/:id", a.deleteResultByIDHandler)
-	// results.POST("/:id/feedback", a.getOrCreateAIFeedbackHandler)
+	results.POST("/:id/feedback", a.generateFeedbakcHandler, a.CheckResultOwnership)
 
 
 	practices.POST("/", a.createPracticeHandler, a.CheckAdminMiddleware)

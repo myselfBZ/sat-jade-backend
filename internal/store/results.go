@@ -12,6 +12,11 @@ import (
 	"github.com/myselfBZ/sat-jade/internal/queries/results"
 )
 
+type ResultOverview struct {
+	CorrectAnswers   int            `json:"correct_answers"`
+	MistakesByDomain map[string]int `json:"mistakes_by_domain"`
+}
+
 type ResultPreview struct {
 	CorrectAnswers int64     `json:"correct_answers"`
 	EnglishScore   int32     `json:"english_score"`
@@ -157,3 +162,27 @@ func (s *ResultStore) GetAll(ctx context.Context) ([]ResultPreview, error) {
 	}
 	return results, nil
 }
+
+func (s *ResultStore) GetOverview(ctx context.Context, id int32) (*ResultOverview, error) {
+	rows, err := s.queries.GetOverview(ctx, id)
+    if err != nil {
+        return nil, err
+    }
+
+    params := &ResultOverview{
+        MistakesByDomain: make(map[string]int),
+    }
+
+    for _, row := range rows {
+        params.CorrectAnswers += int(row.Corrects)
+        if row.Mistakes > 0 {
+            params.MistakesByDomain[row.Domain] = int(row.Mistakes)
+        }
+    }
+
+    return params, nil
+}
+
+
+
+

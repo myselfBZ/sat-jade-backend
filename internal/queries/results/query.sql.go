@@ -203,3 +203,44 @@ func (q *Queries) GetByUserID(ctx context.Context, userID pgtype.UUID) ([]GetByU
 	}
 	return items, nil
 }
+
+const getOverview = `-- name: GetOverview :many
+SELECT 
+    q.domain,
+    COUNT(*) FILTER (WHERE ra.status = 'correct')::int AS corrects,
+    COUNT(*) FILTER (WHERE ra.status != 'correct')::int AS mistakes
+FROM 
+    result_answers ra
+JOIN 
+    question q ON ra.question_id = q.id
+WHERE 
+    ra.result_id = $1
+GROUP BY 
+    q.domain
+`
+
+type GetOverviewRow struct {
+	Domain   string
+	Corrects int32
+	Mistakes int32
+}
+
+func (q *Queries) GetOverview(ctx context.Context, resultID int32) ([]GetOverviewRow, error) {
+	rows, err := q.db.Query(ctx, getOverview, resultID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetOverviewRow
+	for rows.Next() {
+		var i GetOverviewRow
+		if err := rows.Scan(&i.Domain, &i.Corrects, &i.Mistakes); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

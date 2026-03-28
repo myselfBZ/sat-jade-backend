@@ -12,7 +12,9 @@ type AiFeedback struct {
 	ID        pgtype.UUID      `json:"id"`
 	ResultID  int32            `json:"result_id"`
 	UserID    pgtype.UUID      `json:"user_id"`
-	Content   string           `json:"content"`
+	Header    string           `json:"header"`
+	Body      string           `json:"body"`
+	Footer    string           `json:"footer"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 }
 

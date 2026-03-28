@@ -2,16 +2,24 @@ package store
 
 import (
 	"context"
+	"time"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/myselfBZ/sat-jade/internal/queries/feedbacks"
 )
 
 type FeedbackStore struct {
 	queries feedbacks.Queries
+}
+
+type Feedback struct {
+	UserId    string    `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	Header    string    `json:"header"`
+	Body      string    `json:"body"`
+	Footer    string    `json:"footer"`
 }
 
 func NewFeedBackStore(db *pgxpool.Pool) *FeedbackStore {
@@ -21,22 +29,48 @@ func NewFeedBackStore(db *pgxpool.Pool) *FeedbackStore {
 	}
 }
 
-func (s *FeedbackStore) Create(ctx context.Context, userID uuid.UUID, resultID int32, feedback string) error {
-	_, err := s.queries.Create(ctx, feedbacks.CreateParams{
-		UserID:  pgtype.UUID{Bytes: userID, Valid: true},
-		ResultID: resultID,
-		Content: feedback,
-	})
+func (s *FeedbackStore) Get(ctx context.Context, resultId int32) (*Feedback, error) {
+	f, err := s.queries.Get(ctx, resultId)
+	if err != nil {
+		switch err {
+		case pgx.ErrNoRows:
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
 
+	feedback := &Feedback{
+		Header:    f.Header,
+		Body:      f.Body,
+		Footer:    f.Footer,
+		CreatedAt: f.CreatedAt.Time,
+		UserId:    f.UserID.String(),
+	}
+
+	return feedback, nil
+}
+
+
+func (s *FeedbackStore) Create(ctx context.Context, params feedbacks.CreateParams) (*Feedback, error) {
+	f, err := s.queries.Create(ctx, params)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			if pgErr.Code == "23503" {
-				return ErrForeignConstraint
+				return nil, ErrForeignConstraint
 			} else {
-				return err
+				return nil, err
 			}
 		}
 	}
 
-	return err
+	feedback := &Feedback{
+		Header:    f.Header,
+		Body:      f.Body,
+		Footer:    f.Footer,
+		CreatedAt: f.CreatedAt.Time,
+		UserId:    f.UserID.String(),
+	}
+
+	return feedback, err
 }

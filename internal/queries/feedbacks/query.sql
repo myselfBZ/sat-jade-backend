@@ -2,8 +2,13 @@
 INSERT INTO ai_feedbacks (
     result_id, 
     user_id, 
-    content
+    header,
+    body,
+    footer
 ) VALUES (
-    $1, $2, $3
+    $1, $2, $3, $4, $5
 ) 
-RETURNING id, result_id, user_id, content, created_at;
+RETURNING *; 
+
+-- name: Get :one
+SELECT * FROM ai_feedbacks WHERE result_id = $1 LIMIT 1;

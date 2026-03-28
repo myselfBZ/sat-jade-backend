@@ -15,27 +15,58 @@ const create = `-- name: Create :one
 INSERT INTO ai_feedbacks (
     result_id, 
     user_id, 
-    content
+    header,
+    body,
+    footer
 ) VALUES (
-    $1, $2, $3
+    $1, $2, $3, $4, $5
 ) 
-RETURNING id, result_id, user_id, content, created_at
+RETURNING id, result_id, user_id, header, body, footer, created_at
 `
 
 type CreateParams struct {
 	ResultID int32
 	UserID   pgtype.UUID
-	Content  string
+	Header   string
+	Body     string
+	Footer   string
 }
 
 func (q *Queries) Create(ctx context.Context, arg CreateParams) (AiFeedback, error) {
-	row := q.db.QueryRow(ctx, create, arg.ResultID, arg.UserID, arg.Content)
+	row := q.db.QueryRow(ctx, create,
+		arg.ResultID,
+		arg.UserID,
+		arg.Header,
+		arg.Body,
+		arg.Footer,
+	)
 	var i AiFeedback
 	err := row.Scan(
 		&i.ID,
 		&i.ResultID,
 		&i.UserID,
-		&i.Content,
+		&i.Header,
+		&i.Body,
+		&i.Footer,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const get = `-- name: Get :one
+SELECT id, result_id, user_id, header, body, footer, created_at FROM ai_feedbacks WHERE result_id = $1 LIMIT 1
+`
+
+func (q *Queries) Get(ctx context.Context, resultID int32) (AiFeedback, error) {
+	row := q.db.QueryRow(ctx, get, resultID)
+	var i AiFeedback
+	err := row.Scan(
+		&i.ID,
+		&i.ResultID,
+		&i.UserID,
+		&i.Header,
+		&i.Body,
+		&i.Footer,
 		&i.CreatedAt,
 	)
 	return i, err
