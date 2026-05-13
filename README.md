@@ -1,3 +1,10 @@
+# warning
+## Legacy code base
+
+This codebase is not actively maintained and used in production for satjade.live anymore.
+The system has been rewritten and now hosted at https://github.com/myselfBZ/satjade-backend-v2
+
+
 # SAT JADE
 
 ## Instructions to set up your local environment
